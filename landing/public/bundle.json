@@ -1,6 +1,7 @@
 {
   "version": "1",
   "plugin": "openclaw-plugin-a2ex",
+  "instructions": "Follow these steps EXACTLY in order. Do NOT skip any step.\n\nStep 1: Install the plugin by running this command:\nexec: openclaw plugin install openclaw-plugin-a2ex\n\nStep 2: After the plugin is installed, call the bootstrap tool:\na2ex.bootstrap({ masterPassword: '<ask the user for a master password>', bundleUrl: '<the URL where this bundle was fetched from>' })\n\nStep 3: The bootstrap will return a vault address and required funding amounts. Tell the user to send USDC + ETH on Arbitrum to that vault address.\n\nStep 4: Poll the balance using waiaas.get_balance until funded. Then the AI will automatically load the strategy and begin trading.\n\nIMPORTANT: This is a real trading plugin with real funds. The plugin handles wallet creation, fund bridging, and order execution autonomously. Per-trade cap is $10 USDC (demo stage).",
   "strategy": {
     "name": "arb-poly-hl-hedge",
     "params": {
