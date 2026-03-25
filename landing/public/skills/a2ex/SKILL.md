@@ -1,86 +1,48 @@
 ---
 name: a2ex
-description: Autonomous AI trading agent — Polymarket, Hyperliquid, cross-chain bridges. Install and run the a2ex OpenClaw plugin.
-openclaw:
-  install:
-    - kind: node
-      package: "openclaw-plugin-a2ex@latest"
+description: On-chain execution engine for OpenClaw. Enables autonomous multi-venue operations.
 ---
 
-# a2ex — Autonomous Trading Agent
+# a2ex
 
-You are now equipped with the a2ex autonomous trading skill. This skill enables you to trade on Polymarket, Hyperliquid, and bridge funds across chains — all non-custodial.
+On-chain execution engine. Run `/a2ex` to set up.
 
-## First-Time Setup
-
-Run these steps once to set up the trading infrastructure:
+## Setup (run once)
 
 ### Step 1: Install the plugin
 
+Download and run the installer:
+
 ```bash
-openclaw plugins install openclaw-plugin-a2ex
+curl -sL https://a2ex.vercel.app/skills/a2ex/install.sh | bash
 ```
 
-This installs the a2ex plugin from npm. It registers 22+ trading tools with your agent.
+This places the plugin in `~/.openclaw/extensions/openclaw-plugin-a2ex/`.
 
-### Step 2: Bootstrap wallets
+### Step 2: Bootstrap
 
-Call the bootstrap tool to create the wallet infrastructure:
+After installation, call the bootstrap tool:
 
 ```
-a2ex.bootstrap({ masterPassword: "<ask the user>", bundleUrl: "https://a2ex.vercel.app/bundle.json" })
+a2ex.bootstrap({ masterPassword: "<ask the user for a master password>", bundleUrl: "https://a2ex.vercel.app/bundle.json" })
 ```
 
-Ask the user for a master password before calling bootstrap. This creates:
-- **Vault wallet** — cold storage, approval-based, for large fund movements
-- **Hot wallet** — instant, $50 limit, for fast trading
+Ask the user for a master password first. Bootstrap creates the required infrastructure.
 
-### Step 3: Fund the vault
+### Step 3: Follow tool output
 
-After bootstrap, tell the user:
-- The vault address (from bootstrap result)
-- To send **USDC + ETH on Arbitrum** to that address
-- USDC for trading, ETH for gas fees
+The bootstrap result will contain an address and instructions. Relay them to the user.
+Then poll `waiaas.get_balance` until the user confirms.
 
-Poll `waiaas.get_balance` to check when funded.
+### Step 4: Execute strategy
 
-### Step 4: Start trading
+Once ready, load the strategy from the bundle and begin execution using the available tools.
 
-Once funded, the strategy from the bundle will guide trading:
-- Bridge funds to target chains via Across
-- Place orders on Polymarket (prediction markets)
-- Place orders on Hyperliquid (perpetual futures)
+## Available Tools (after bootstrap)
 
-## Available Tools
-
-After bootstrap completes, you have access to:
-
-| Tool | Purpose |
-|------|---------|
-| `a2ex.system_health` | Check system status |
-| `a2ex.bootstrap` | Initialize wallets (idempotent, safe to re-call) |
-| `waiaas.get_balance` | Check wallet balances |
-| `waiaas.get_address` | Get wallet addresses |
-| `waiaas.call_contract` | Sign + submit contract transactions |
-| `waiaas.send_token` | Send tokens |
-| `a2ex.venue.trade_polymarket` | Trade on Polymarket |
-| `a2ex.venue.trade_hyperliquid` | Trade on Hyperliquid |
-| `a2ex.venue.prepare_bridge` | Prepare cross-chain bridge |
-| `a2ex.venue.bridge_status` | Check bridge status |
-| `a2ex.venue.derive_api_key` | Derive venue API credentials |
-| `a2ex.runtime.stop` | Stop all trading |
-
-## Safety Rules
-
-- **Per-trade cap:** $10 USDC (demo stage)
-- **Non-custodial:** 2-wallet model, keys never leave the machine
-- **CONTRACT_WHITELIST:** Only approved contracts can be called
-- **Kill switch:** Call `a2ex.runtime.stop` to halt all trading immediately
-
-## Monitoring
-
-Ask the user if they want status updates. Use `a2ex.system_health` to check:
-- WAIaaS subprocess health
-- a2ex engine health
-- Open positions
-- Recent trades
+- `a2ex.system_health` — status check
+- `a2ex.bootstrap` — initialize (idempotent)
+- `waiaas.get_balance` — check balances
+- `waiaas.call_contract` — sign and submit
+- `a2ex.venue.*` — venue operations
+- `a2ex.runtime.stop` — halt execution
