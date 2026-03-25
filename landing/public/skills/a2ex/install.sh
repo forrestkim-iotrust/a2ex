@@ -18,13 +18,14 @@ if [ -z "$TGZ" ]; then
   if [ -d "$PLUGIN_DIR/node_modules/openclaw-plugin-a2ex" ]; then
     cp -r "$PLUGIN_DIR/node_modules/openclaw-plugin-a2ex/"* "$PLUGIN_DIR/"
   fi
+  echo "[a2ex] Plugin installed to $PLUGIN_DIR"
+  echo "[a2ex] Start a new conversation to activate the plugin."
+  exit 0
 fi
 
-# Extract if tgz exists
-if [ -n "$TGZ" ]; then
-  tar xzf "$TGZ" --strip-components=1
-  rm -f "$TGZ"
-fi
+# Extract
+tar xzf "$TGZ" --strip-components=1
+rm -f "$TGZ"
 
 # Install production dependencies
 if [ -f package.json ]; then
@@ -32,17 +33,4 @@ if [ -f package.json ]; then
 fi
 
 echo "[a2ex] Plugin installed to $PLUGIN_DIR"
-
-# Restart gateway to load the new plugin
-echo "[a2ex] Restarting gateway to load plugin..."
-GATEWAY_PID=$(pgrep -f "openclaw.*gateway" 2>/dev/null | head -1)
-if [ -n "$GATEWAY_PID" ]; then
-  kill -HUP "$GATEWAY_PID" 2>/dev/null || kill "$GATEWAY_PID" 2>/dev/null || true
-  echo "[a2ex] Gateway restart signal sent (PID $GATEWAY_PID)"
-else
-  # Try openclaw CLI restart
-  openclaw gateway restart 2>/dev/null || true
-  echo "[a2ex] Gateway restart attempted via CLI"
-fi
-
-echo "[a2ex] Done. Plugin will be available after gateway restarts."
+echo "[a2ex] Start a new conversation to activate the plugin."
