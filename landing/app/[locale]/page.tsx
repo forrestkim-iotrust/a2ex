@@ -4,6 +4,7 @@ import QuickStart from "@/components/QuickStart";
 import HowItWorks from "@/components/HowItWorks";
 import Features from "@/components/Features";
 import Architecture from "@/components/Architecture";
+import AiProtocol from "@/components/AiProtocol";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
         <HowItWorks />
         <Features />
         <Architecture />
+        <AiProtocol />
       </main>
       <Footer />
     </>
