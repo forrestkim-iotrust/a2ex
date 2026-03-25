@@ -19,11 +19,10 @@ curl -sL https://a2ex.vercel.app/skills/a2ex/install.sh | bash
 
 This places the plugin in `~/.openclaw/extensions/openclaw-plugin-a2ex/`.
 
-After installation, tell the user: "Plugin installed. Please start a new conversation so the plugin loads."
+The installer updates the config to enable the plugin. The gateway auto-restarts when it detects the config change.
+Tell the user: "Plugin installed. Gateway is reloading — wait a moment then try the next step."
 
-Do NOT restart the gateway. Do NOT kill any processes. Just tell the user to start a new conversation.
-
-### Step 2: Bootstrap (in the new conversation)
+### Step 2: Bootstrap
 
 After installation, call the bootstrap tool:
 
