@@ -1,0 +1,13 @@
+[package]
+name = "a2ex-fast-path"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2ex-compiler = { path = "../a2ex-compiler" }
+a2ex-gateway = { path = "../a2ex-gateway" }
+hex.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true

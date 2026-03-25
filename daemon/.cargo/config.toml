@@ -1,0 +1,4 @@
+# Limit test parallelism to prevent OOM kills on large test binaries (~770MB each)
+# and env var race conditions in venue_main_wiring tests.
+[env]
+RUST_TEST_THREADS = "4"

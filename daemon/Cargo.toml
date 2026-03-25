@@ -1,0 +1,36 @@
+[workspace]
+members = ["crates/a2ex-across-adapter", "crates/a2ex-compiler", "crates/a2ex-control", "crates/a2ex-daemon", "crates/a2ex-evm-adapter", "crates/a2ex-fast-path", "crates/a2ex-gateway", "crates/a2ex-hyperliquid-adapter", "crates/a2ex-ipc", "crates/a2ex-live-harness", "crates/a2ex-mcp", "crates/a2ex-onboarding", "crates/a2ex-planner", "crates/a2ex-policy", "crates/a2ex-prediction-market-adapter", "crates/a2ex-reservation", "crates/a2ex-signer-bridge", "crates/a2ex-skill-bundle", "crates/a2ex-state", "crates/a2ex-strategy-runtime", "crates/a2ex-waiaas-signer"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+
+[workspace.dependencies]
+alloy-provider = { version = "1.7.3", default-features = false, features = ["reqwest"] }
+async-trait = "0.1"
+axum = "0.8"
+futures-util = { version = "0.3", default-features = false, features = ["sink"] }
+interprocess = { version = "2.4.0", features = ["tokio"] }
+reqwest = "0.12"
+rmcp = { version = "1.2.0", default-features = false, features = ["server"] }
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+schemars = "1.2.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+sha2 = "0.10"
+tempfile = "3.23.0"
+thiserror = "2.0"
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "signal", "sync", "time", "fs"] }
+tokio-rusqlite = "0.7.0"
+tokio-util = { version = "0.7.18", features = ["codec"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+uuid = { version = "1.18.1", features = ["serde", "v7"] }
+base64 = "0.22"
+hex = "0.4"
+hmac = "0.12"
+rmp-serde = "1"
+sha3 = "0.10"

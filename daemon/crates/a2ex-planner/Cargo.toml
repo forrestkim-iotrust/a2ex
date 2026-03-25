@@ -1,0 +1,12 @@
+[package]
+name = "a2ex-planner"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2ex-compiler = { path = "../a2ex-compiler" }
+a2ex-control = { path = "../a2ex-control" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

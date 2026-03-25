@@ -1,0 +1,27 @@
+[package]
+name = "a2ex-across-adapter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+reqwest = { workspace = true, features = ["json"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+async-trait.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+
+[[test]]
+name = "across_http_transport"
+path = "../../tests/across_http_transport.rs"
+
+[[test]]
+name = "across_live_api"
+path = "../../tests/across_live_api.rs"

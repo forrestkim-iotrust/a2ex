@@ -1,0 +1,144 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "github": "GitHub",
+    "clawhub": "ClawHub"
+  },
+  "hero": {
+    "badge": "OpenClaw Plugin",
+    "title": "One Line. Autonomous Trading.",
+    "subtitle": "Type one sentence into OpenClaw and get a fully autonomous AI trading agent — across Polymarket, Hyperliquid, and more. Non-custodial. Multi-chain.",
+    "cta": "Get Started",
+    "ctaDocs": "How It Works"
+  },
+  "quickstart": {
+    "title": "Just Say This in OpenClaw",
+    "description": "You already have OpenClaw. Just type this one line — the AI handles everything: plugin install, wallet creation, fund bridging, and trading.",
+    "oneliner": "Install the a2ex plugin, set up my wallets, and start trading on Polymarket",
+    "label": "Type this into OpenClaw chat:",
+    "result": "That's it. a2ex installs itself, creates non-custodial wallets, bridges your funds, and starts executing trades — all from this one instruction.",
+    "copied": "Copied!"
+  },
+  "features": {
+    "title": "What a2ex Does For You",
+    "trading": {
+      "title": "Autonomous Trading",
+      "description": "AI executes trades on Polymarket, Hyperliquid, and more — 24/7, without human intervention."
+    },
+    "security": {
+      "title": "Non-Custodial Security",
+      "description": "2-wallet model (Vault + Hot) with MPC signing. Your keys never leave your machine."
+    },
+    "multichain": {
+      "title": "Multi-Chain",
+      "description": "Arbitrum, Polygon, and cross-chain bridges. One agent handles multiple networks seamlessly."
+    },
+    "simple": {
+      "title": "Zero Config",
+      "description": "No setup files. No API keys to manage. Just tell OpenClaw what you want — a2ex figures out the rest."
+    }
+  },
+  "howItWorks": {
+    "title": "What Happens When You Type That Line",
+    "steps": [
+      {
+        "num": "1",
+        "title": "Plugin installs itself",
+        "description": "OpenClaw downloads and configures a2ex automatically."
+      },
+      {
+        "num": "2",
+        "title": "Wallets are created",
+        "description": "A Vault wallet (cold, approval-based) and a Hot wallet (instant, $50 limit) — non-custodial, on your machine."
+      },
+      {
+        "num": "3",
+        "title": "Funds are bridged",
+        "description": "a2ex bridges your USDC to the right chain for each venue via Across."
+      },
+      {
+        "num": "4",
+        "title": "Trades execute",
+        "description": "AI places orders on Polymarket, Hyperliquid, or any connected venue."
+      }
+    ]
+  },
+  "architecture": {
+    "title": "Under the Hood",
+    "description": "a2ex runs as an OpenClaw plugin. When you give a trading instruction, three programs work together inside your OpenClaw container.",
+    "openclaw": "OpenClaw AI",
+    "openclawDesc": "Your AI Agent",
+    "plugin": "a2ex Plugin",
+    "pluginDesc": "Orchestrator",
+    "a2ex": "a2ex Engine",
+    "a2exDesc": "22+ Trading Tools",
+    "waiaas": "WAIaaS",
+    "waiaasDesc": "Wallet & Signing",
+    "venues": "Venues",
+    "polymarket": "Polymarket",
+    "hyperliquid": "Hyperliquid",
+    "across": "Across Bridge"
+  },
+  "footer": {
+    "tagline": "Built by Iotrust. An OpenClaw plugin for the agentic trading era.",
+    "github": "GitHub",
+    "docs": "Documentation",
+    "clawhub": "ClawHub"
+  },
+  "docs": {
+    "title": "Getting Started with a2ex",
+    "subtitle": "Already running OpenClaw? You're one sentence away from autonomous trading.",
+    "prerequisites": {
+      "title": "What You Need",
+      "openclaw": "OpenClaw running (any version with plugin support)",
+      "funds": "USDC + ETH on Arbitrum (for trading)",
+      "note": "That's it. No API keys, no config files, no Docker knowledge needed."
+    },
+    "quick": {
+      "title": "The Quick Way (One Line)",
+      "description": "Open your OpenClaw chat and type:",
+      "prompt": "Install the a2ex plugin, set up my wallets, and start trading on Polymarket",
+      "note": "OpenClaw will handle everything: download the plugin, create wallets, ask you to fund them, and start trading. You can intervene or ask questions at any time."
+    },
+    "step1": {
+      "title": "Step 1: Install the Plugin",
+      "description": "Tell OpenClaw to install a2ex. The AI downloads and configures it.",
+      "prompt": "Install the a2ex trading plugin",
+      "note": "The plugin registers 22+ trading tools with your OpenClaw agent."
+    },
+    "step2": {
+      "title": "Step 2: Bootstrap Your Wallets",
+      "description": "a2ex creates a secure wallet infrastructure on your machine.",
+      "prompt": "Bootstrap a2ex and set up my trading wallets",
+      "note": "Creates a Vault wallet (cold, approval-based) and a Hot wallet (instant, $50 limit). Your master password is the only recovery method — save it.",
+      "warning": "Never share your master password. It controls your wallet infrastructure."
+    },
+    "step3": {
+      "title": "Step 3: Fund Your Wallet",
+      "description": "Send USDC and ETH to the vault address the AI shows you.",
+      "prompt": "Show me my wallet addresses",
+      "note": "Send USDC (for trades) and ETH (for gas) on Arbitrum to the vault address."
+    },
+    "step4": {
+      "title": "Step 4: Start Trading",
+      "description": "Tell the AI what to trade. It handles bridging, approvals, and execution.",
+      "prompt": "Trade on Polymarket: buy YES on the top trending market",
+      "note": "a2ex bridges funds, approves tokens, and executes the trade. Monitor with: \"Show my trading status\""
+    },
+    "limitations": {
+      "title": "Known Limitations (Early Access)",
+      "items": [
+        "Per-trade cap: $10 USDC (demo stage)",
+        "Supported venues: Polymarket, Hyperliquid",
+        "WAIaaS session may expire after extended idle — AI auto-recovers",
+        "Requires OpenClaw with plugin support"
+      ]
+    },
+    "backToHome": "Back to Home"
+  },
+  "lang": {
+    "switch": "Language",
+    "en": "English",
+    "ko": "Korean"
+  }
+}

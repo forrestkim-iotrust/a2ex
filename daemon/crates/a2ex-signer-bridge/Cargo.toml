@@ -1,0 +1,12 @@
+[package]
+name = "a2ex-signer-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+a2ex-ipc = { path = "../a2ex-ipc" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

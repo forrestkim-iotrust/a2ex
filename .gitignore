@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.next/
+target/
+.env
+.env.local
+*.pem
+*.key
+.DS_Store
+.vercel

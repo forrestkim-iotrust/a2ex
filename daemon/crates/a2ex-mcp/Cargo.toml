@@ -1,0 +1,40 @@
+[package]
+name = "a2ex-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2ex-across-adapter = { path = "../a2ex-across-adapter" }
+a2ex-hyperliquid-adapter = { path = "../a2ex-hyperliquid-adapter" }
+a2ex-onboarding = { path = "../a2ex-onboarding" }
+a2ex-prediction-market-adapter = { path = "../a2ex-prediction-market-adapter" }
+a2ex-signer-bridge = { path = "../a2ex-signer-bridge" }
+a2ex-skill-bundle = { path = "../a2ex-skill-bundle" }
+a2ex-state = { path = "../a2ex-state" }
+a2ex-waiaas-signer = { path = "../a2ex-waiaas-signer" }
+hex.workspace = true
+tracing.workspace = true
+reqwest.workspace = true
+rmcp = { workspace = true, features = ["schemars", "transport-io"] }
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+url = { version = "2.5", features = ["serde"] }
+
+[dev-dependencies]
+async-trait.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+
+[[test]]
+name = "venue_mcp_tools"
+path = "../../tests/venue_mcp_tools.rs"
+
+[[test]]
+name = "venue_main_wiring"
+path = "../../tests/venue_main_wiring.rs"

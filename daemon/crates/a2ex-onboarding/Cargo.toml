@@ -1,0 +1,22 @@
+[package]
+name = "a2ex-onboarding"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2ex-compiler = { path = "../a2ex-compiler" }
+a2ex-control = { path = "../a2ex-control" }
+a2ex-daemon = { path = "../a2ex-daemon" }
+a2ex-planner = { path = "../a2ex-planner" }
+a2ex-skill-bundle = { path = "../a2ex-skill-bundle" }
+a2ex-state = { path = "../a2ex-state" }
+hex.workspace = true
+reqwest.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+url = { version = "2.5", features = ["serde"] }

@@ -1,0 +1,144 @@
+{
+  "nav": {
+    "docs": "문서",
+    "github": "GitHub",
+    "clawhub": "ClawHub"
+  },
+  "hero": {
+    "badge": "OpenClaw 플러그인",
+    "title": "한 줄이면 자율 트레이딩.",
+    "subtitle": "OpenClaw에 한 문장만 입력하면 — Polymarket, Hyperliquid 등에서 완전 자율 AI 트레이딩 에이전트가 동작합니다. 비수탁형. 멀티체인.",
+    "cta": "시작하기",
+    "ctaDocs": "작동 원리"
+  },
+  "quickstart": {
+    "title": "OpenClaw에 이것만 입력하세요",
+    "description": "이미 OpenClaw를 쓰고 있다면, 이 한 줄이면 됩니다. 플러그인 설치, 지갑 생성, 자금 브릿지, 트레이딩 — 전부 AI가 처리합니다.",
+    "oneliner": "a2ex 플러그인 설치하고, 지갑 만들고, Polymarket에서 트레이딩 시작해줘",
+    "label": "OpenClaw 채팅에 입력하세요:",
+    "result": "끝입니다. a2ex가 스스로 설치되고, 비수탁형 지갑을 만들고, 자금을 브릿지하고, 거래를 실행합니다 — 이 한마디 지시로.",
+    "copied": "복사됨!"
+  },
+  "features": {
+    "title": "a2ex가 해주는 것",
+    "trading": {
+      "title": "자율 트레이딩",
+      "description": "AI가 Polymarket, Hyperliquid 등에서 24/7 자동으로 거래합니다."
+    },
+    "security": {
+      "title": "비수탁형 보안",
+      "description": "2-지갑 모델 (Vault + Hot) + MPC 서명. 키가 내 머신을 떠나지 않습니다."
+    },
+    "multichain": {
+      "title": "멀티체인",
+      "description": "Arbitrum, Polygon, 크로스체인 브릿지. 하나의 에이전트가 여러 네트워크를 처리합니다."
+    },
+    "simple": {
+      "title": "설정 제로",
+      "description": "설정 파일 없음. API 키 관리 없음. OpenClaw에 말만 하면 — a2ex가 알아서 합니다."
+    }
+  },
+  "howItWorks": {
+    "title": "그 한 줄을 입력하면 일어나는 일",
+    "steps": [
+      {
+        "num": "1",
+        "title": "플러그인이 자동 설치됩니다",
+        "description": "OpenClaw가 a2ex를 다운로드하고 설정합니다."
+      },
+      {
+        "num": "2",
+        "title": "지갑이 생성됩니다",
+        "description": "Vault 지갑 (콜드, 승인 기반)과 Hot 지갑 (인스턴트, $50 한도) — 비수탁형, 내 머신에서."
+      },
+      {
+        "num": "3",
+        "title": "자금이 브릿지됩니다",
+        "description": "a2ex가 Across를 통해 USDC를 각 거래소에 맞는 체인으로 이동시킵니다."
+      },
+      {
+        "num": "4",
+        "title": "거래가 실행됩니다",
+        "description": "AI가 Polymarket, Hyperliquid 등 연결된 거래소에 주문합니다."
+      }
+    ]
+  },
+  "architecture": {
+    "title": "내부 구조",
+    "description": "a2ex는 OpenClaw 플러그인으로 동작합니다. 트레이딩 지시를 내리면, OpenClaw 컨테이너 내 세 프로그램이 협력합니다.",
+    "openclaw": "OpenClaw AI",
+    "openclawDesc": "당신의 AI 에이전트",
+    "plugin": "a2ex 플러그인",
+    "pluginDesc": "오케스트레이터",
+    "a2ex": "a2ex 엔진",
+    "a2exDesc": "22+ 트레이딩 도구",
+    "waiaas": "WAIaaS",
+    "waiaasDesc": "지갑 & 서명",
+    "venues": "거래소",
+    "polymarket": "Polymarket",
+    "hyperliquid": "Hyperliquid",
+    "across": "Across 브릿지"
+  },
+  "footer": {
+    "tagline": "Built by Iotrust. 에이전트 트레이딩 시대를 위한 OpenClaw 플러그인.",
+    "github": "GitHub",
+    "docs": "문서",
+    "clawhub": "ClawHub"
+  },
+  "docs": {
+    "title": "a2ex 시작하기",
+    "subtitle": "OpenClaw를 이미 쓰고 있나요? 한 문장이면 자율 트레이딩이 시작됩니다.",
+    "prerequisites": {
+      "title": "필요한 것",
+      "openclaw": "OpenClaw 실행 중 (플러그인 지원 버전)",
+      "funds": "Arbitrum의 USDC + ETH (트레이딩용)",
+      "note": "그게 다입니다. API 키, 설정 파일, Docker 지식 필요 없습니다."
+    },
+    "quick": {
+      "title": "빠른 시작 (한 줄)",
+      "description": "OpenClaw 채팅을 열고 입력하세요:",
+      "prompt": "a2ex 플러그인 설치하고, 지갑 만들고, Polymarket에서 트레이딩 시작해줘",
+      "note": "OpenClaw가 알아서 처리합니다: 플러그인 다운로드, 지갑 생성, 펀딩 안내, 트레이딩 시작. 언제든 개입하거나 질문할 수 있습니다."
+    },
+    "step1": {
+      "title": "1단계: 플러그인 설치",
+      "description": "OpenClaw에게 a2ex 설치를 요청합니다. AI가 다운로드하고 설정합니다.",
+      "prompt": "a2ex 트레이딩 플러그인 설치해줘",
+      "note": "플러그인이 22개 이상의 트레이딩 도구를 OpenClaw 에이전트에 등록합니다."
+    },
+    "step2": {
+      "title": "2단계: 지갑 부트스트랩",
+      "description": "a2ex가 내 머신에 안전한 지갑 인프라를 생성합니다.",
+      "prompt": "a2ex 부트스트랩하고 트레이딩 지갑 만들어줘",
+      "note": "Vault 지갑 (콜드, 승인 기반)과 Hot 지갑 (인스턴트, $50 한도)이 생성됩니다. 마스터 패스워드가 유일한 복구 수단입니다 — 반드시 저장하세요.",
+      "warning": "마스터 패스워드를 절대 공유하지 마세요. 지갑 인프라를 제어합니다."
+    },
+    "step3": {
+      "title": "3단계: 지갑 충전",
+      "description": "AI가 보여주는 vault 주소로 USDC와 ETH를 전송합니다.",
+      "prompt": "내 지갑 주소 보여줘",
+      "note": "Arbitrum에서 vault 주소로 USDC (거래용)와 ETH (가스비)를 전송하세요."
+    },
+    "step4": {
+      "title": "4단계: 트레이딩 시작",
+      "description": "AI에게 무엇을 거래할지 말하세요. 브릿지, 승인, 실행을 모두 처리합니다.",
+      "prompt": "Polymarket에서 트레이딩: 인기 마켓에서 YES 매수해줘",
+      "note": "a2ex가 자금 브릿지, 토큰 승인, 거래 실행을 처리합니다. 모니터링: \"트레이딩 상태 보여줘\""
+    },
+    "limitations": {
+      "title": "알려진 제한사항 (Early Access)",
+      "items": [
+        "거래당 최대 $10 USDC (데모 단계)",
+        "지원 거래소: Polymarket, Hyperliquid",
+        "WAIaaS 세션이 장시간 미사용 시 만료될 수 있음 — AI가 자동 복구",
+        "플러그인 지원 OpenClaw 필수"
+      ]
+    },
+    "backToHome": "홈으로 돌아가기"
+  },
+  "lang": {
+    "switch": "언어",
+    "en": "English",
+    "ko": "한국어"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "openclaw-plugin-a2ex",
+  "name": "A2EX Trading Plugin",
+  "description": "Autonomous multi-venue trading via WAIaaS wallet infrastructure",
+  "version": "0.0.1",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

@@ -1,0 +1,287 @@
+[package]
+name = "a2ex-daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2ex-across-adapter = { path = "../a2ex-across-adapter" }
+a2ex-compiler = { path = "../a2ex-compiler" }
+a2ex-control = { path = "../a2ex-control" }
+a2ex-evm-adapter = { path = "../a2ex-evm-adapter" }
+a2ex-fast-path = { path = "../a2ex-fast-path" }
+a2ex-gateway = { path = "../a2ex-gateway" }
+a2ex-hyperliquid-adapter = { path = "../a2ex-hyperliquid-adapter" }
+a2ex-ipc = { path = "../a2ex-ipc" }
+a2ex-planner = { path = "../a2ex-planner" }
+a2ex-policy = { path = "../a2ex-policy" }
+a2ex-prediction-market-adapter = { path = "../a2ex-prediction-market-adapter" }
+a2ex-reservation = { path = "../a2ex-reservation" }
+a2ex-signer-bridge = { path = "../a2ex-signer-bridge" }
+a2ex-skill-bundle = { path = "../a2ex-skill-bundle" }
+a2ex-state = { path = "../a2ex-state" }
+a2ex-strategy-runtime = { path = "../a2ex-strategy-runtime" }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-rusqlite.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+a2ex-live-harness = { path = "../a2ex-live-harness" }
+a2ex-mcp = { path = "../a2ex-mcp" }
+a2ex-onboarding = { path = "../a2ex-onboarding" }
+async-trait.workspace = true
+axum.workspace = true
+reqwest.workspace = true
+rmcp = { workspace = true, features = ["client", "transport-child-process"] }
+tempfile.workspace = true
+
+[[test]]
+name = "policy_gate"
+path = "../../tests/policy_gate.rs"
+
+[[test]]
+name = "sqlite_recovery"
+path = "../../tests/sqlite_recovery.rs"
+
+[[test]]
+name = "reservation_flow"
+path = "../../tests/reservation_flow.rs"
+
+[[test]]
+name = "signer_boundary"
+path = "../../tests/signer_boundary.rs"
+
+[[test]]
+name = "agent_control"
+path = "../../tests/agent_control.rs"
+
+[[test]]
+name = "strategy_registration"
+path = "../../tests/strategy_registration.rs"
+
+[[test]]
+name = "compiler_pipeline"
+path = "../../tests/compiler_pipeline.rs"
+
+[[test]]
+name = "decision_gateway"
+path = "../../tests/decision_gateway.rs"
+
+[[test]]
+name = "fast_path_engine"
+path = "../../tests/fast_path_engine.rs"
+
+[[test]]
+name = "fast_action_templates"
+path = "../../tests/fast_action_templates.rs"
+
+[[test]]
+name = "contract_call_adapter"
+path = "../../tests/contract_call_adapter.rs"
+
+[[test]]
+name = "fast_path_signer_flow"
+path = "../../tests/fast_path_signer_flow.rs"
+
+[[test]]
+name = "fast_path_execution_state"
+path = "../../tests/fast_path_execution_state.rs"
+
+[[test]]
+name = "fast_path_end_to_end"
+path = "../../tests/fast_path_end_to_end.rs"
+
+[[test]]
+name = "strategy_runtime_loop"
+path = "../../tests/strategy_runtime_loop.rs"
+
+[[test]]
+name = "strategy_rebalance_policy"
+path = "../../tests/strategy_rebalance_policy.rs"
+
+[[test]]
+name = "strategy_runtime_recovery"
+path = "../../tests/strategy_runtime_recovery.rs"
+
+[[test]]
+name = "hyperliquid_adapter"
+path = "../../tests/hyperliquid_adapter.rs"
+
+[[test]]
+name = "stateful_runtime_end_to_end"
+path = "../../tests/stateful_runtime_end_to_end.rs"
+
+[[test]]
+name = "runtime_stop_control"
+path = "../../tests/runtime_stop_control.rs"
+
+[[test]]
+name = "runtime_stop_control_mcp"
+path = "../../tests/runtime_stop_control_mcp.rs"
+
+[[test]]
+name = "multistep_planner"
+path = "../../tests/multistep_planner.rs"
+
+[[test]]
+name = "multistep_execution"
+path = "../../tests/multistep_execution.rs"
+
+[[test]]
+name = "multistep_observability"
+path = "../../tests/multistep_observability.rs"
+
+[[test]]
+name = "reconciliation_queries"
+path = "../../tests/reconciliation_queries.rs"
+
+[[test]]
+name = "skill_bundle_contract"
+path = "../../tests/skill_bundle_contract.rs"
+
+[[test]]
+name = "skill_bundle_loader"
+path = "../../tests/skill_bundle_loader.rs"
+
+[[test]]
+name = "skill_bundle_interpretation"
+path = "../../tests/skill_bundle_interpretation.rs"
+
+[[test]]
+name = "skill_bundle_interpretation_loader"
+path = "../../tests/skill_bundle_interpretation_loader.rs"
+
+[[test]]
+name = "skill_bundle_lifecycle"
+path = "../../tests/skill_bundle_lifecycle.rs"
+
+[[test]]
+name = "skill_mcp_lifecycle"
+path = "../../tests/skill_mcp_lifecycle.rs"
+
+[[test]]
+name = "skill_mcp_surface"
+path = "../../tests/skill_mcp_surface.rs"
+
+[[test]]
+name = "skill_mcp_operator_control"
+path = "../../tests/skill_mcp_operator_control.rs"
+
+[[test]]
+name = "skill_mcp_end_to_end"
+path = "../../tests/skill_mcp_end_to_end.rs"
+
+[[test]]
+name = "skill_proposal_packet"
+path = "../../tests/skill_proposal_packet.rs"
+
+[[test]]
+name = "install_bootstrap_contract"
+path = "../../tests/install_bootstrap_contract.rs"
+
+[[test]]
+name = "install_bootstrap_entrypoint"
+path = "../../tests/install_bootstrap_entrypoint.rs"
+
+[[test]]
+name = "onboarding_checklist_contract"
+path = "../../tests/onboarding_checklist_contract.rs"
+
+[[test]]
+name = "onboarding_resume_state"
+path = "../../tests/onboarding_resume_state.rs"
+
+[[test]]
+name = "onboarding_guided_flow"
+path = "../../tests/onboarding_guided_flow.rs"
+
+[[test]]
+name = "onboarding_mcp_guided_flow"
+path = "../../tests/onboarding_mcp_guided_flow.rs"
+
+[[test]]
+name = "install_to_ready_end_to_end"
+path = "../../tests/install_to_ready_end_to_end.rs"
+
+[[test]]
+name = "route_readiness_projection"
+path = "../../tests/route_readiness_projection.rs"
+
+[[test]]
+name = "route_readiness_guided_flow"
+path = "../../tests/route_readiness_guided_flow.rs"
+
+[[test]]
+name = "route_readiness_mcp"
+path = "../../tests/route_readiness_mcp.rs"
+
+[[test]]
+name = "route_readiness_mcp_guided_flow"
+path = "../../tests/route_readiness_mcp_guided_flow.rs"
+
+[[test]]
+name = "strategy_selection_contract"
+path = "../../tests/strategy_selection_contract.rs"
+
+[[test]]
+name = "strategy_selection_mcp"
+path = "../../tests/strategy_selection_mcp.rs"
+
+[[test]]
+name = "strategy_runtime_handoff_contract"
+path = "../../tests/strategy_runtime_handoff_contract.rs"
+
+[[test]]
+name = "strategy_runtime_handoff_mcp"
+path = "../../tests/strategy_runtime_handoff_mcp.rs"
+
+[[test]]
+name = "readiness_to_stop_end_to_end"
+path = "../../tests/readiness_to_stop_end_to_end.rs"
+
+[[test]]
+name = "strategy_operator_surface_contract"
+path = "../../tests/strategy_operator_surface_contract.rs"
+
+[[test]]
+name = "strategy_operator_surface_mcp"
+path = "../../tests/strategy_operator_surface_mcp.rs"
+
+[[test]]
+name = "operator_recovery_end_to_end"
+path = "../../tests/operator_recovery_end_to_end.rs"
+
+[[test]]
+name = "proposal_to_autonomy_end_to_end"
+path = "../../tests/proposal_to_autonomy_end_to_end.rs"
+
+[[test]]
+name = "strategy_runtime_failure_visibility_end_to_end"
+path = "../../tests/strategy_runtime_failure_visibility_end_to_end.rs"
+
+[[test]]
+name = "strategy_operator_report_contract"
+path = "../../tests/strategy_operator_report_contract.rs"
+
+[[test]]
+name = "strategy_operator_report_mcp"
+path = "../../tests/strategy_operator_report_mcp.rs"
+
+[[test]]
+name = "strategy_report_window_contract"
+path = "../../tests/strategy_report_window_contract.rs"
+
+[[test]]
+name = "strategy_report_window_mcp"
+path = "../../tests/strategy_report_window_mcp.rs"
+
+[[test]]
+name = "operator_supervision_loop_end_to_end"
+path = "../../tests/operator_supervision_loop_end_to_end.rs"
+

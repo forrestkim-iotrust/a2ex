@@ -1,0 +1,44 @@
+name: Release Daemon Binary
+
+on:
+  push:
+    tags: ['daemon-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: a2ex-mcp
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            binary: a2ex-mcp
+          - target: x86_64-apple-darwin
+            os: macos-13
+            binary: a2ex-mcp
+    defaults:
+      run:
+        working-directory: daemon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: daemon
+      - run: cargo build --release --target ${{ matrix.target }} -p a2ex-mcp
+      - name: Package binary
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../a2ex-mcp-${{ matrix.target }}.tar.gz ${{ matrix.binary }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: daemon/a2ex-mcp-${{ matrix.target }}.tar.gz

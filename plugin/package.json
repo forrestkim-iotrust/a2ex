@@ -1,0 +1,42 @@
+{
+  "name": "openclaw-plugin-a2ex",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenClaw plugin for autonomous AI trading — Polymarket, Hyperliquid, and more",
+  "main": "./dist/index.js",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "files": [
+    "dist/",
+    "openclaw.plugin.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/forrestkim-iotrust/a2ex.git",
+    "directory": "plugin"
+  },
+  "homepage": "https://github.com/forrestkim-iotrust/a2ex",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest --run",
+    "test:unit": "vitest --project unit --run",
+    "test:lifecycle": "vitest --project lifecycle --run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0",
+    "ws": "^8.19.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^4.3.6"
+  }
+}
