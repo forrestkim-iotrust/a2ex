@@ -37,7 +37,7 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Simulated OpenClaw chat — shows the one-line experience */}
+        {/* Simulated OpenClaw chat — shows the bundle URL flow */}
         <div className="mt-16 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 shadow-2xl shadow-primary/5">
           <div className="flex items-center gap-2 border-b border-gray-800 px-4 py-3">
             <div className="h-3 w-3 rounded-full bg-red-500" />
@@ -46,38 +46,47 @@ export default function Hero() {
             <span className="ml-2 text-xs text-gray-500">OpenClaw</span>
           </div>
           <div className="p-6 text-left text-sm leading-relaxed">
-            {/* User message */}
+            {/* User pastes bundle URL */}
             <div className="mb-4 flex justify-end">
-              <div className="max-w-md rounded-lg bg-primary/20 px-4 py-2.5 text-gray-200">
-                a2ex 플러그인 설치하고, 지갑 만들고, Polymarket에서 트레이딩 시작해줘
+              <div className="max-w-md rounded-lg bg-primary/20 px-4 py-2.5 font-mono text-xs text-primary break-all">
+                https://a2ex-landing.vercel.app/bundle.json
               </div>
             </div>
 
-            {/* AI responses */}
+            {/* AI responses — the 3-turn flow */}
             <div className="space-y-3">
               <p className="text-gray-400">
                 <span className="font-semibold text-primary">AI:</span>{" "}
-                Installing a2ex plugin...{" "}
-                <span className="text-green-400">done</span>
+                Reading bundle... a2ex plugin required.
+              </p>
+              <p className="text-gray-500 font-mono text-xs">
+                exec: openclaw plugin install openclaw-plugin-a2ex
               </p>
               <p className="text-gray-400">
                 <span className="font-semibold text-primary">AI:</span>{" "}
-                Vault wallet created:{" "}
+                Plugin installed.{" "}
+                <span className="text-green-400">&#10003;</span>{" "}
+                Bootstrapping wallets...
+              </p>
+              <p className="text-gray-400">
+                <span className="font-semibold text-primary">AI:</span>{" "}
+                Vault:{" "}
                 <span className="font-mono text-gray-300">0x7a3F...c29E</span>
-              </p>
-              <p className="text-gray-400">
-                <span className="font-semibold text-primary">AI:</span>{" "}
-                Hot wallet ready. $50 instant limit.{" "}
+                {" "}| Hot: ready ($50 limit){" "}
                 <span className="text-green-400">&#10003;</span>
               </p>
               <p className="text-gray-400">
                 <span className="font-semibold text-primary">AI:</span>{" "}
-                Bridging USDC Arbitrum → Polygon via Across...
+                Send <span className="text-white">15 USDC + 0.005 ETH</span> to vault on Arbitrum.
+              </p>
+              <p className="text-gray-400">
+                <span className="font-semibold text-primary">AI:</span>{" "}
+                Funded. Bridging Arbitrum → Polygon...
               </p>
               <p className="text-gray-400">
                 <span className="font-semibold text-primary">AI:</span>{" "}
                 <span className="text-green-400">Trade executed:</span>{" "}
-                Polymarket — YES @ $0.62 — 10 USDC
+                Polymarket — YES @ $0.62 — 5 USDC
               </p>
               <p className="text-gray-400">
                 <span className="font-semibold text-primary">AI:</span>{" "}

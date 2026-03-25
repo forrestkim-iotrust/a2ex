@@ -6,17 +6,17 @@
   },
   "hero": {
     "badge": "OpenClaw Plugin",
-    "title": "One Line. Autonomous Trading.",
-    "subtitle": "Type one sentence into OpenClaw and get a fully autonomous AI trading agent — across Polymarket, Hyperliquid, and more. Non-custodial. Multi-chain.",
-    "cta": "Get Started",
+    "title": "One URL. Autonomous Trading.",
+    "subtitle": "Paste one URL into OpenClaw. The AI installs the plugin, creates wallets, bridges funds, and starts trading — all by itself.",
+    "cta": "Copy the URL",
     "ctaDocs": "How It Works"
   },
   "quickstart": {
-    "title": "Just Say This in OpenClaw",
-    "description": "You already have OpenClaw. Just type this one line — the AI handles everything: plugin install, wallet creation, fund bridging, and trading.",
-    "oneliner": "Install the a2ex plugin, set up my wallets, and start trading on Polymarket",
-    "label": "Type this into OpenClaw chat:",
-    "result": "That's it. a2ex installs itself, creates non-custodial wallets, bridges your funds, and starts executing trades — all from this one instruction.",
+    "title": "Paste This URL into OpenClaw",
+    "description": "You already have OpenClaw running. Just paste this URL into the chat. The AI reads the bundle, installs the plugin, bootstraps wallets, and starts executing trades.",
+    "bundleUrl": "https://a2ex-landing.vercel.app/bundle.json",
+    "label": "Paste into OpenClaw chat:",
+    "result": "That's it. OpenClaw reads the bundle, runs `openclaw plugin install openclaw-plugin-a2ex`, calls `a2ex.bootstrap`, creates your wallets, and starts trading — fully autonomous from this one URL.",
     "copied": "Copied!"
   },
   "features": {
@@ -35,37 +35,37 @@
     },
     "simple": {
       "title": "Zero Config",
-      "description": "No setup files. No API keys to manage. Just tell OpenClaw what you want — a2ex figures out the rest."
+      "description": "No setup files. No API keys to manage. Paste the bundle URL — the AI figures out the rest."
     }
   },
   "howItWorks": {
-    "title": "What Happens When You Type That Line",
+    "title": "What Happens When You Paste the URL",
     "steps": [
       {
         "num": "1",
-        "title": "Plugin installs itself",
-        "description": "OpenClaw downloads and configures a2ex automatically."
+        "title": "AI reads the bundle",
+        "description": "OpenClaw fetches the bundle JSON and sees it needs the a2ex plugin + strategy parameters."
       },
       {
         "num": "2",
-        "title": "Wallets are created",
-        "description": "A Vault wallet (cold, approval-based) and a Hot wallet (instant, $50 limit) — non-custodial, on your machine."
+        "title": "Plugin installs and bootstraps",
+        "description": "AI runs `openclaw plugin install openclaw-plugin-a2ex`, then calls `a2ex.bootstrap` — wallets, sessions, and policies are created automatically."
       },
       {
         "num": "3",
-        "title": "Funds are bridged",
-        "description": "a2ex bridges your USDC to the right chain for each venue via Across."
+        "title": "You fund the vault",
+        "description": "AI shows your vault address. Send USDC + ETH on Arbitrum. AI polls until funded."
       },
       {
         "num": "4",
         "title": "Trades execute",
-        "description": "AI places orders on Polymarket, Hyperliquid, or any connected venue."
+        "description": "AI bridges funds, places orders on Polymarket/Hyperliquid, and manages positions — all autonomous."
       }
     ]
   },
   "architecture": {
     "title": "Under the Hood",
-    "description": "a2ex runs as an OpenClaw plugin. When you give a trading instruction, three programs work together inside your OpenClaw container.",
+    "description": "a2ex runs as an OpenClaw plugin. When you paste the bundle URL, three programs spin up inside your OpenClaw container.",
     "openclaw": "OpenClaw AI",
     "openclawDesc": "Your AI Agent",
     "plugin": "a2ex Plugin",
@@ -87,7 +87,7 @@
   },
   "docs": {
     "title": "Getting Started with a2ex",
-    "subtitle": "Already running OpenClaw? You're one sentence away from autonomous trading.",
+    "subtitle": "Already running OpenClaw? You're one URL away from autonomous trading.",
     "prerequisites": {
       "title": "What You Need",
       "openclaw": "OpenClaw running (any version with plugin support)",
@@ -95,35 +95,35 @@
       "note": "That's it. No API keys, no config files, no Docker knowledge needed."
     },
     "quick": {
-      "title": "The Quick Way (One Line)",
-      "description": "Open your OpenClaw chat and type:",
-      "prompt": "Install the a2ex plugin, set up my wallets, and start trading on Polymarket",
-      "note": "OpenClaw will handle everything: download the plugin, create wallets, ask you to fund them, and start trading. You can intervene or ask questions at any time."
+      "title": "The Quick Way (One URL)",
+      "description": "Open your OpenClaw chat and paste:",
+      "prompt": "https://a2ex-landing.vercel.app/bundle.json",
+      "note": "OpenClaw reads the bundle, installs the plugin, bootstraps wallets, asks you to fund, and starts trading. You can intervene or ask questions at any time."
     },
     "step1": {
-      "title": "Step 1: Install the Plugin",
-      "description": "Tell OpenClaw to install a2ex. The AI downloads and configures it.",
-      "prompt": "Install the a2ex trading plugin",
-      "note": "The plugin registers 22+ trading tools with your OpenClaw agent."
+      "title": "Step 1: AI Installs the Plugin",
+      "description": "OpenClaw reads the bundle and automatically runs:",
+      "prompt": "exec: openclaw plugin install openclaw-plugin-a2ex",
+      "note": "The plugin registers a service and a per-turn tool factory with 22+ trading tools."
     },
     "step2": {
-      "title": "Step 2: Bootstrap Your Wallets",
-      "description": "a2ex creates a secure wallet infrastructure on your machine.",
-      "prompt": "Bootstrap a2ex and set up my trading wallets",
-      "note": "Creates a Vault wallet (cold, approval-based) and a Hot wallet (instant, $50 limit). Your master password is the only recovery method — save it.",
-      "warning": "Never share your master password. It controls your wallet infrastructure."
+      "title": "Step 2: Bootstrap (Automatic)",
+      "description": "AI calls a2ex.bootstrap — WAIaaS spawns, wallets and sessions are created.",
+      "prompt": "a2ex.bootstrap({ masterPassword, bundleUrl })",
+      "note": "Creates a Vault wallet (cold, approval-based) and a Hot wallet (instant, $50 limit). Master password is used once and not stored.",
+      "warning": "Save your master password. It's the only way to recover your wallets."
     },
     "step3": {
-      "title": "Step 3: Fund Your Wallet",
-      "description": "Send USDC and ETH to the vault address the AI shows you.",
-      "prompt": "Show me my wallet addresses",
-      "note": "Send USDC (for trades) and ETH (for gas) on Arbitrum to the vault address."
+      "title": "Step 3: Fund Your Vault",
+      "description": "AI shows your vault address. Send USDC and ETH on Arbitrum.",
+      "prompt": "Send USDC 15 + ETH 0.005 to the vault address shown by the AI",
+      "note": "AI polls your balance and proceeds automatically once funded."
     },
     "step4": {
-      "title": "Step 4: Start Trading",
-      "description": "Tell the AI what to trade. It handles bridging, approvals, and execution.",
-      "prompt": "Trade on Polymarket: buy YES on the top trending market",
-      "note": "a2ex bridges funds, approves tokens, and executes the trade. Monitor with: \"Show my trading status\""
+      "title": "Step 4: Trading Begins",
+      "description": "AI loads the strategy from the bundle, bridges funds, and executes trades.",
+      "prompt": "Fully autonomous — AI handles bridging, approvals, and order execution",
+      "note": "Monitor anytime with: a2ex.system_health. Stop anytime with: a2ex.runtime.stop"
     },
     "limitations": {
       "title": "Known Limitations (Early Access)",

@@ -12,7 +12,7 @@ export default function QuickStart() {
         </h2>
         <p className="mb-12 text-center text-gray-400">{t("description")}</p>
 
-        {/* The one-liner */}
+        {/* The bundle URL */}
         <div className="relative overflow-hidden rounded-xl border-2 border-primary/30 bg-gray-900">
           <div className="flex items-center gap-2 border-b border-gray-800 px-4 py-3">
             <div className="h-3 w-3 rounded-full bg-primary/60" />
@@ -20,15 +20,15 @@ export default function QuickStart() {
               {t("label")}
             </span>
           </div>
-          <CopyButton text={t("oneliner")} />
+          <CopyButton text={t("bundleUrl")} />
           <div className="p-6">
-            <p className="text-lg font-medium leading-relaxed text-gray-100">
-              &ldquo;{t("oneliner")}&rdquo;
+            <p className="break-all font-mono text-lg font-medium leading-relaxed text-primary">
+              {t("bundleUrl")}
             </p>
           </div>
         </div>
 
-        <p className="mt-8 text-center text-gray-500">{t("result")}</p>
+        <p className="mt-8 text-center text-sm text-gray-500">{t("result")}</p>
       </div>
     </section>
   );

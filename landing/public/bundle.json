@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "plugin": "openclaw-plugin-a2ex",
+  "strategy": {
+    "name": "arb-poly-hl-hedge",
+    "params": {
+      "bridge": {
+        "from": "arbitrum-mainnet",
+        "to": "base-mainnet",
+        "token": "USDC",
+        "amount": "10"
+      },
+      "polymarket": {
+        "market": "auto",
+        "outcome": "auto",
+        "amount": "5"
+      },
+      "hyperliquid": {
+        "asset": "ETH",
+        "side": "auto",
+        "size": "0.01"
+      }
+    }
+  }
+}
