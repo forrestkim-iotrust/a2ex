@@ -38,6 +38,8 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
 if [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then
   TARGET="x86_64-unknown-linux-gnu"
+elif [ "$OS" = "linux" ] && ([ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]); then
+  TARGET="aarch64-unknown-linux-gnu"
 elif [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
   TARGET="aarch64-apple-darwin"
 elif [ "$OS" = "darwin" ] && [ "$ARCH" = "x86_64" ]; then
