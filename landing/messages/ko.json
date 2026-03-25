@@ -14,7 +14,7 @@
   "quickstart": {
     "title": "이 URL을 OpenClaw에 붙여넣으세요",
     "description": "이미 OpenClaw를 실행 중이라면, 이 URL을 채팅에 붙여넣기만 하면 됩니다. AI가 번들을 읽고, 플러그인 설치하고, 지갑 부트스트랩하고, 트레이딩을 시작합니다.",
-    "bundleUrl": "https://a2ex-landing.vercel.app/bundle.json",
+    "bundleUrl": "/bundle.json",
     "label": "OpenClaw 채팅에 붙여넣기:",
     "result": "끝입니다. OpenClaw가 번들을 읽고, `openclaw plugin install openclaw-plugin-a2ex`를 실행하고, `a2ex.bootstrap`을 호출하고, 지갑을 만들고, 트레이딩을 시작합니다 — 이 URL 하나로 전부 자동.",
     "copied": "복사됨!"
@@ -97,7 +97,7 @@
     "quick": {
       "title": "빠른 시작 (URL 하나)",
       "description": "OpenClaw 채팅을 열고 붙여넣으세요:",
-      "prompt": "https://a2ex-landing.vercel.app/bundle.json",
+      "prompt": "/bundle.json",
       "note": "OpenClaw가 번들을 읽고, 플러그인 설치, 지갑 부트스트랩, 펀딩 안내, 트레이딩 시작까지 전부 처리합니다. 언제든 개입하거나 질문할 수 있습니다."
     },
     "step1": {

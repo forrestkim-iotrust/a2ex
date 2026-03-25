@@ -3,6 +3,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CopyButton from "@/components/CopyButton";
+import BundleUrl from "@/components/BundleUrl";
 
 function PromptCard({
   number,
@@ -101,14 +102,7 @@ export default function DocsPage() {
               {t("quick.title")}
             </h2>
             <p className="mb-4 text-gray-400">{t("quick.description")}</p>
-            <div className="relative overflow-hidden rounded-lg border border-primary/20 bg-gray-900">
-              <CopyButton text={t("quick.prompt")} />
-              <div className="p-4">
-                <p className="text-lg font-medium text-gray-100">
-                  &ldquo;{t("quick.prompt")}&rdquo;
-                </p>
-              </div>
-            </div>
+            <BundleUrl />
             <p className="mt-4 text-sm text-gray-500">{t("quick.note")}</p>
           </div>
 

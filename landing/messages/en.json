@@ -14,7 +14,7 @@
   "quickstart": {
     "title": "Paste This URL into OpenClaw",
     "description": "You already have OpenClaw running. Just paste this URL into the chat. The AI reads the bundle, installs the plugin, bootstraps wallets, and starts executing trades.",
-    "bundleUrl": "https://a2ex-landing.vercel.app/bundle.json",
+    "bundleUrl": "/bundle.json",
     "label": "Paste into OpenClaw chat:",
     "result": "That's it. OpenClaw reads the bundle, runs `openclaw plugin install openclaw-plugin-a2ex`, calls `a2ex.bootstrap`, creates your wallets, and starts trading — fully autonomous from this one URL.",
     "copied": "Copied!"
@@ -97,7 +97,7 @@
     "quick": {
       "title": "The Quick Way (One URL)",
       "description": "Open your OpenClaw chat and paste:",
-      "prompt": "https://a2ex-landing.vercel.app/bundle.json",
+      "prompt": "/bundle.json",
       "note": "OpenClaw reads the bundle, installs the plugin, bootstraps wallets, asks you to fund, and starts trading. You can intervene or ask questions at any time."
     },
     "step1": {

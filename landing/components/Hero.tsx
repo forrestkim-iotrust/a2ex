@@ -1,9 +1,17 @@
+"use client";
+
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Hero() {
   const t = useTranslations("hero");
   const locale = useLocale();
+  const [bundleUrl, setBundleUrl] = useState("https://your-domain/bundle.json");
+
+  useEffect(() => {
+    setBundleUrl(`${window.location.origin}/bundle.json`);
+  }, []);
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-20">
@@ -49,7 +57,7 @@ export default function Hero() {
             {/* User pastes bundle URL */}
             <div className="mb-4 flex justify-end">
               <div className="max-w-md rounded-lg bg-primary/20 px-4 py-2.5 font-mono text-xs text-primary break-all">
-                https://a2ex-landing.vercel.app/bundle.json
+                {bundleUrl}
               </div>
             </div>
 
