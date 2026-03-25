@@ -3,40 +3,59 @@ set -e
 
 PLUGIN_DIR="${HOME}/.openclaw/extensions/openclaw-plugin-a2ex"
 CONFIG_FILE="${HOME}/.openclaw/openclaw.json"
-mkdir -p "$PLUGIN_DIR"
+BIN_DIR="${HOME}/.openclaw/bin"
+RELEASE_URL="https://github.com/forrestkim-iotrust/a2ex/releases/latest/download"
+
+mkdir -p "$PLUGIN_DIR" "$BIN_DIR"
 cd "$PLUGIN_DIR"
 
-echo "[a2ex] Downloading openclaw-plugin-a2ex..."
+# --- 1. Install plugin from npm ---
+echo "[a2ex] Installing plugin..."
 
-# Download the tarball
 npm pack openclaw-plugin-a2ex@latest 2>/dev/null
-
-# Find the downloaded tgz file
 TGZ=$(ls openclaw-plugin-a2ex-*.tgz 2>/dev/null | head -1)
+
 if [ -z "$TGZ" ]; then
-  echo "[a2ex] npm pack failed. Trying npm install instead..."
   npm install openclaw-plugin-a2ex@latest --prefix "$PLUGIN_DIR" --production 2>/dev/null
   if [ -d "$PLUGIN_DIR/node_modules/openclaw-plugin-a2ex" ]; then
     cp -r "$PLUGIN_DIR/node_modules/openclaw-plugin-a2ex/"* "$PLUGIN_DIR/"
   fi
-fi
-
-# Extract if tgz exists
-if [ -n "$TGZ" ]; then
+else
   tar xzf "$TGZ" --strip-components=1
   rm -f "$TGZ"
 fi
 
-# Install production dependencies
 if [ -f package.json ]; then
   npm install --production --ignore-scripts 2>/dev/null || true
 fi
+echo "[a2ex] Plugin installed."
 
-echo "[a2ex] Plugin files installed to $PLUGIN_DIR"
+# --- 2. Download a2ex-mcp binary ---
+echo "[a2ex] Downloading a2ex-mcp binary..."
 
-# Add plugin to config — triggers gateway auto-restart via config watcher
+ARCH=$(uname -m)
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+if [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then
+  TARGET="x86_64-unknown-linux-gnu"
+elif [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
+  TARGET="aarch64-apple-darwin"
+elif [ "$OS" = "darwin" ] && [ "$ARCH" = "x86_64" ]; then
+  TARGET="x86_64-apple-darwin"
+else
+  echo "[a2ex] WARNING: No prebuilt binary for $OS/$ARCH. a2ex-mcp will not be available."
+  TARGET=""
+fi
+
+if [ -n "$TARGET" ]; then
+  curl -sL "${RELEASE_URL}/a2ex-mcp-${TARGET}.tar.gz" | tar xzf - -C "$BIN_DIR"
+  chmod +x "$BIN_DIR/a2ex-mcp"
+  echo "[a2ex] Binary installed to $BIN_DIR/a2ex-mcp"
+fi
+
+# --- 3. Update config to enable plugin + set binary path ---
 if [ -f "$CONFIG_FILE" ]; then
-  echo "[a2ex] Updating config to enable plugin..."
+  echo "[a2ex] Updating config..."
   node -e "
     const fs = require('fs');
     const cfg = JSON.parse(fs.readFileSync('$CONFIG_FILE', 'utf8'));
@@ -53,8 +72,8 @@ if [ -f "$CONFIG_FILE" ]; then
       cfg.tools.allow.push('group:plugins');
     }
     fs.writeFileSync('$CONFIG_FILE', JSON.stringify(cfg, null, 2));
-  " 2>/dev/null && echo "[a2ex] Config updated. Gateway will auto-restart to load plugin." \
-    || echo "[a2ex] Config update failed. Manual restart may be needed."
-else
-  echo "[a2ex] No config file found at $CONFIG_FILE. Manual restart may be needed."
+  " 2>/dev/null && echo "[a2ex] Config updated. Gateway will auto-restart." \
+    || echo "[a2ex] Config update failed."
 fi
+
+echo "[a2ex] Installation complete. Plugin + binary ready."
