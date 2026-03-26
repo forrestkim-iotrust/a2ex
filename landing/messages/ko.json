@@ -1,144 +1,43 @@
 {
-  "nav": {
-    "docs": "문서",
-    "github": "GitHub",
-    "clawhub": "ClawHub"
-  },
-  "hero": {
-    "badge": "OpenClaw 플러그인",
-    "title": "URL 하나. 자율 트레이딩.",
-    "subtitle": "OpenClaw에 URL 하나만 붙여넣으세요. AI가 플러그인 설치, 지갑 생성, 자금 브릿지, 트레이딩까지 — 전부 알아서 합니다.",
-    "cta": "URL 복사",
-    "ctaDocs": "작동 원리"
-  },
-  "quickstart": {
-    "title": "이 URL을 OpenClaw에 붙여넣으세요",
-    "description": "이미 OpenClaw를 실행 중이라면, 이 URL을 채팅에 붙여넣기만 하면 됩니다. AI가 번들을 읽고, 플러그인 설치하고, 지갑 부트스트랩하고, 트레이딩을 시작합니다.",
-    "bundleUrl": "/bundle.json",
-    "label": "OpenClaw 채팅에 붙여넣기:",
-    "result": "끝입니다. OpenClaw가 번들을 읽고, `openclaw plugin install openclaw-plugin-a2ex`를 실행하고, `a2ex.bootstrap`을 호출하고, 지갑을 만들고, 트레이딩을 시작합니다 — 이 URL 하나로 전부 자동.",
-    "copied": "복사됨!"
-  },
-  "features": {
-    "title": "a2ex가 해주는 것",
-    "trading": {
-      "title": "자율 트레이딩",
-      "description": "AI가 Polymarket, Hyperliquid 등에서 24/7 자동으로 거래합니다."
-    },
-    "security": {
-      "title": "비수탁형 보안",
-      "description": "2-지갑 모델 (Vault + Hot) + MPC 서명. 키가 내 머신을 떠나지 않습니다."
-    },
-    "multichain": {
-      "title": "멀티체인",
-      "description": "Arbitrum, Polygon, 크로스체인 브릿지. 하나의 에이전트가 여러 네트워크를 처리합니다."
-    },
-    "simple": {
-      "title": "설정 제로",
-      "description": "설정 파일 없음. API 키 관리 없음. 번들 URL을 붙여넣으면 — AI가 알아서 합니다."
-    }
-  },
-  "howItWorks": {
-    "title": "URL을 붙여넣으면 일어나는 일",
-    "steps": [
-      {
-        "num": "1",
-        "title": "AI가 번들을 읽습니다",
-        "description": "OpenClaw가 번들 JSON을 가져와서 a2ex 플러그인 + 전략 파라미터를 확인합니다."
-      },
-      {
-        "num": "2",
-        "title": "플러그인 설치 + 부트스트랩",
-        "description": "AI가 `openclaw plugin install openclaw-plugin-a2ex` 실행 후 `a2ex.bootstrap` 호출 — 지갑, 세션, 정책이 자동 생성됩니다."
-      },
-      {
-        "num": "3",
-        "title": "vault에 자금을 보냅니다",
-        "description": "AI가 vault 주소를 보여줍니다. Arbitrum에서 USDC + ETH를 전송하세요. AI가 입금을 확인합니다."
-      },
-      {
-        "num": "4",
-        "title": "트레이딩 실행",
-        "description": "AI가 자금 브릿지, Polymarket/Hyperliquid 주문, 포지션 관리 — 전부 자율적으로 처리합니다."
-      }
-    ]
-  },
-  "architecture": {
-    "title": "내부 구조",
-    "description": "a2ex는 OpenClaw 플러그인으로 동작합니다. 번들 URL을 붙여넣으면, OpenClaw 컨테이너 내에서 세 프로그램이 자동으로 시작됩니다.",
-    "openclaw": "OpenClaw AI",
-    "openclawDesc": "당신의 AI 에이전트",
-    "plugin": "a2ex 플러그인",
-    "pluginDesc": "오케스트레이터",
-    "a2ex": "a2ex 엔진",
-    "a2exDesc": "22+ 트레이딩 도구",
-    "waiaas": "WAIaaS",
-    "waiaasDesc": "지갑 & 서명",
-    "venues": "거래소",
-    "polymarket": "Polymarket",
-    "hyperliquid": "Hyperliquid",
-    "across": "Across 브릿지"
-  },
-  "footer": {
-    "tagline": "Built by Iotrust. 에이전트 트레이딩 시대를 위한 OpenClaw 플러그인.",
-    "github": "GitHub",
-    "docs": "문서",
-    "clawhub": "ClawHub"
-  },
-  "docs": {
-    "title": "a2ex 시작하기",
-    "subtitle": "OpenClaw를 이미 쓰고 있나요? URL 하나면 자율 트레이딩이 시작됩니다.",
-    "prerequisites": {
-      "title": "필요한 것",
-      "openclaw": "OpenClaw 실행 중 (플러그인 지원 버전)",
-      "funds": "Arbitrum의 USDC + ETH (트레이딩용)",
-      "note": "그게 다입니다. API 키, 설정 파일, Docker 지식 필요 없습니다."
-    },
-    "quick": {
-      "title": "빠른 시작 (URL 하나)",
-      "description": "OpenClaw 채팅을 열고 붙여넣으세요:",
-      "prompt": "/bundle.json",
-      "note": "OpenClaw가 번들을 읽고, 플러그인 설치, 지갑 부트스트랩, 펀딩 안내, 트레이딩 시작까지 전부 처리합니다. 언제든 개입하거나 질문할 수 있습니다."
-    },
-    "step1": {
-      "title": "1단계: AI가 플러그인 설치",
-      "description": "OpenClaw가 번들을 읽고 자동으로 실행합니다:",
-      "prompt": "exec: openclaw plugin install openclaw-plugin-a2ex",
-      "note": "플러그인이 서비스와 턴별 도구 팩토리를 22+ 트레이딩 도구와 함께 등록합니다."
-    },
-    "step2": {
-      "title": "2단계: 부트스트랩 (자동)",
-      "description": "AI가 a2ex.bootstrap을 호출 — WAIaaS 스폰, 지갑과 세션 자동 생성.",
-      "prompt": "a2ex.bootstrap({ masterPassword, bundleUrl })",
-      "note": "Vault 지갑 (콜드, 승인 기반)과 Hot 지갑 (인스턴트, $50 한도)이 생성됩니다. 마스터 패스워드는 한 번만 사용되고 저장되지 않습니다.",
-      "warning": "마스터 패스워드를 반드시 저장하세요. 지갑 복구의 유일한 수단입니다."
-    },
-    "step3": {
-      "title": "3단계: Vault에 자금 전송",
-      "description": "AI가 보여주는 vault 주소로 Arbitrum에서 USDC와 ETH를 전송합니다.",
-      "prompt": "AI가 보여주는 vault 주소로 USDC 15 + ETH 0.005 전송",
-      "note": "AI가 잔액을 폴링하고 입금 확인 후 자동으로 다음 단계로 진행합니다."
-    },
-    "step4": {
-      "title": "4단계: 트레이딩 시작",
-      "description": "AI가 번들의 전략을 로드하고, 자금 브릿지, 거래 실행을 자율적으로 처리합니다.",
-      "prompt": "완전 자율 — AI가 브릿지, 승인, 주문 실행을 처리",
-      "note": "모니터링: a2ex.system_health / 중지: a2ex.runtime.stop"
-    },
-    "limitations": {
-      "title": "알려진 제한사항 (Early Access)",
-      "items": [
-        "거래당 최대 $10 USDC (데모 단계)",
-        "지원 거래소: Polymarket, Hyperliquid",
-        "WAIaaS 세션이 장시간 미사용 시 만료될 수 있음 — AI가 자동 복구",
-        "플러그인 지원 OpenClaw 필수"
-      ]
-    },
-    "backToHome": "홈으로 돌아가기"
+  "home": {
+    "headline": "AI가 알아서 트레이딩합니다.",
+    "sub": "Polymarket. Hyperliquid. 멀티체인.",
+    "instruction": "OpenClaw에 이걸 붙여넣으세요:",
+    "docs": "작동 원리",
+    "github": "GitHub"
   },
   "lang": {
-    "switch": "언어",
-    "en": "English",
-    "ko": "한국어"
+    "en": "EN",
+    "ko": "KO"
+  },
+  "docs": {
+    "title": "a2ex 작동 원리",
+    "subtitle": "a2ex는 AI 에이전트가 예측시장과 DeFi에서 자율적으로 트레이딩할 수 있게 해주는 OpenClaw 플러그인입니다.",
+    "step1": {
+      "title": "1. URL 붙여넣기",
+      "description": "OpenClaw 에이전트에게 이 URL을 주세요. 페이지를 읽고 스킬 파일을 다운로드하고 플러그인을 자동 설치합니다."
+    },
+    "step2": {
+      "title": "2. 부트스트랩",
+      "description": "AI가 비수탁형 지갑 인프라를 생성합니다 — Vault (콜드, 승인 기반)와 Hot 지갑 ($50 인스턴트 한도)."
+    },
+    "step3": {
+      "title": "3. 충전",
+      "description": "AI가 보여주는 vault 주소로 Arbitrum에서 USDC + ETH를 전송하세요. 잔액을 확인하고 자동으로 진행합니다."
+    },
+    "step4": {
+      "title": "4. 트레이딩",
+      "description": "AI가 자금 브릿지, Polymarket/Hyperliquid 주문, 포지션 관리를 전부 자율적으로 처리합니다."
+    },
+    "safety": {
+      "title": "안전",
+      "items": [
+        "거래당 최대 $10 USDC (데모 단계)",
+        "비수탁형: 2-지갑 모델, 키가 내 머신을 떠나지 않음",
+        "킬 스위치: 언제든 \"트레이딩 중지\"라고 말하면 됨",
+        "지원 거래소: Polymarket, Hyperliquid"
+      ]
+    },
+    "back": "돌아가기"
   }
 }
