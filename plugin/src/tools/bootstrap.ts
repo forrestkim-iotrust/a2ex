@@ -247,13 +247,25 @@ export function createBootstrapTool(
 
       // Step 8: Detect a2ex-mcp binary
       if (!state.binaryPath) {
+        // Try PATH first
         try {
           const found = execSync("which a2ex-mcp", { encoding: "utf-8" }).trim();
           if (found) {
             state = { ...state, binaryPath: found };
           }
         } catch {
-          // Binary not on PATH — skip a2ex subprocess
+          // Not on PATH — check known install locations
+        }
+      }
+      if (!state.binaryPath) {
+        const homeBin = `${process.env.HOME || "/home/node"}/.openclaw/bin/a2ex-mcp`;
+        try {
+          const fs = await import("node:fs");
+          if (fs.existsSync(homeBin)) {
+            state = { ...state, binaryPath: homeBin };
+          }
+        } catch {
+          // Fallback path not found either
         }
       }
 
