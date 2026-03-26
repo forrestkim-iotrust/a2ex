@@ -3,10 +3,10 @@ set -e
 
 PLUGIN_DIR="${HOME}/.openclaw/extensions/openclaw-plugin-a2ex"
 CONFIG_FILE="${HOME}/.openclaw/openclaw.json"
-BIN_DIR="${HOME}/.openclaw/bin"
+BIN_DIR="/usr/local/bin"
 RELEASE_URL="https://github.com/forrestkim-iotrust/a2ex/releases/latest/download"
 
-mkdir -p "$PLUGIN_DIR" "$BIN_DIR"
+mkdir -p "$PLUGIN_DIR"
 cd "$PLUGIN_DIR"
 
 # --- 1. Install plugin from npm ---
@@ -50,9 +50,19 @@ else
 fi
 
 if [ -n "$TARGET" ]; then
-  curl -sL "${RELEASE_URL}/a2ex-mcp-${TARGET}.tar.gz" | tar xzf - -C "$BIN_DIR"
-  chmod +x "$BIN_DIR/a2ex-mcp"
-  echo "[a2ex] Binary installed to $BIN_DIR/a2ex-mcp"
+  if curl -sL "${RELEASE_URL}/a2ex-mcp-${TARGET}.tar.gz" | tar xzf - -C "$BIN_DIR" 2>/dev/null; then
+    chmod +x "$BIN_DIR/a2ex-mcp"
+    echo "[a2ex] Binary installed to $BIN_DIR/a2ex-mcp"
+  else
+    # Fallback: install to home dir and add to PATH
+    FALLBACK_DIR="${HOME}/.openclaw/bin"
+    mkdir -p "$FALLBACK_DIR"
+    curl -sL "${RELEASE_URL}/a2ex-mcp-${TARGET}.tar.gz" | tar xzf - -C "$FALLBACK_DIR"
+    chmod +x "$FALLBACK_DIR/a2ex-mcp"
+    export PATH="$FALLBACK_DIR:$PATH"
+    echo "export PATH=\"$FALLBACK_DIR:\$PATH\"" >> "${HOME}/.bashrc" 2>/dev/null || true
+    echo "[a2ex] Binary installed to $FALLBACK_DIR/a2ex-mcp (added to PATH)"
+  fi
 fi
 
 # --- 3. Update config to enable plugin + set binary path ---
