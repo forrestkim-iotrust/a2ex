@@ -29,19 +29,20 @@ COPY plugin/src/ ./src/
 RUN pnpm build
 
 # ============================================================
-# Stage 3: Runtime — openclaw base + a2ex components
+# Stage 3: Runtime — node:20 + openclaw + a2ex components
 # ============================================================
-FROM ghcr.io/forrestkim-iotrust/openclaw-base:latest AS runtime
+FROM node:20-slim AS runtime
 
-USER root
-
-# Install tini for process supervision
+# Install system deps + tini for process supervision
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tini curl && \
+    tini curl git && \
     rm -rf /var/lib/apt/lists/*
 
-# Install WAIaaS CLI globally
-RUN npm install -g @waiaas/cli
+# Install OpenClaw + WAIaaS CLI globally
+RUN npm install -g openclaw @waiaas/cli
+
+# Create openclaw user (matching base image convention)
+RUN useradd -m -s /bin/bash openclaw
 
 # Copy Rust binary
 COPY --from=rust-builder /build/target/release/a2ex-mcp /usr/local/bin/a2ex-mcp
