@@ -4,12 +4,13 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { locales, type Locale } from "@/i18n/config";
+import { Providers } from "@/app/providers";
 import "../globals.css";
 
 export const metadata: Metadata = {
   title: "a2ex — Autonomous AI Trading Agent",
   description:
-    "AI agents that trade autonomously across prediction markets and DeFi venues. Non-custodial. Multi-chain. Powered by OpenClaw.",
+    "Deploy autonomous trading agents on decentralized compute. One wallet, one click, full control.",
 };
 
 export default async function LocaleLayout({
@@ -27,10 +28,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className="dark">
-      <body className="bg-gray-950 text-gray-100 antialiased">
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+      <body className="antialiased" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
+        <Providers>
+          <NextIntlClientProvider messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -2,8 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --bg: #0c0c0e;
+  --surface: #161618;
+  --surface-elevated: #1e1e20;
+  --text: #e8e4de;
+  --text-muted: #6b6560;
+  --accent: #f0a030;
+  --accent-hover: #f5b547;
+  --accent-subtle: rgba(240, 160, 48, 0.1);
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --border: #2a2a2c;
+}
+
+.light {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface-elevated: #fafaf8;
+  --text: #1a1815;
+  --text-muted: #8a857f;
+  --accent: #d48a20;
+  --accent-hover: #c07a18;
+  --accent-subtle: rgba(212, 138, 32, 0.08);
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+  --border: #e0ddd8;
+}
+
 @layer base {
   body {
-    @apply min-h-screen;
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: "DM Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Scan-line texture for hero */
+.scan-lines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(240, 160, 48, 0.015) 2px,
+    rgba(240, 160, 48, 0.015) 4px
+  );
+  pointer-events: none;
+}
+
+/* Monospace tabular numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
