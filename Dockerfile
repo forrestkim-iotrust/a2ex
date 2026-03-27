@@ -16,7 +16,7 @@ RUN cargo build --release -p a2ex-mcp
 # ============================================================
 # Stage 2: Build TypeScript plugin
 # ============================================================
-FROM node:20-slim AS plugin-builder
+FROM node:22-slim AS plugin-builder
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
@@ -31,7 +31,7 @@ RUN pnpm build
 # ============================================================
 # Stage 3: Runtime — node:20 + openclaw + a2ex components
 # ============================================================
-FROM node:20-slim AS runtime
+FROM node:22-slim AS runtime
 
 # Install system deps + tini for process supervision
 RUN apt-get update && apt-get install -y --no-install-recommends \
