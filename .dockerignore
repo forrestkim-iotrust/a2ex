@@ -1,0 +1,12 @@
+daemon/target/
+daemon/tests/
+plugin/node_modules/
+plugin/dist/
+landing/
+landing/.next/
+.git/
+.gstack/
+.github/
+docs/
+*.md
+!plugin/openclaw.plugin.json

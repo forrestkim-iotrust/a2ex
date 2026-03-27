@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 // Tool name constants
 // ---------------------------------------------------------------------------
 
-pub const TOOL_POLYMARKET_TRADE: &str = "polymarket.trade";
-pub const TOOL_HYPERLIQUID_TRADE: &str = "hyperliquid.trade";
+pub const TOOL_POLYMARKET_TRADE: &str = "polymarket_trade";
+pub const TOOL_HYPERLIQUID_TRADE: &str = "hyperliquid_trade";
 
 // ---------------------------------------------------------------------------
 // Request types

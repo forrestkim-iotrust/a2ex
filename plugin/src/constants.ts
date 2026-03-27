@@ -1,18 +1,18 @@
 // Tool names — prefixed with plugin id per OpenClaw convention
-export const TOOL_SYSTEM_HEALTH = "a2ex.system_health";
-export const TOOL_BOOTSTRAP = "a2ex.bootstrap";
+export const TOOL_SYSTEM_HEALTH = "a2ex_system_health";
+export const TOOL_BOOTSTRAP = "a2ex_bootstrap";
 
 // Dynamic MCP tool prefix
-export const A2EX_TOOL_PREFIX = "a2ex.";
+export const A2EX_TOOL_PREFIX = "a2ex_";
 
 // WAIaaS runtime tool names
-export const TOOL_WAIAAS_GET_BALANCE = "waiaas.get_balance";
-export const TOOL_WAIAAS_GET_ADDRESS = "waiaas.get_address";
-export const TOOL_WAIAAS_CALL_CONTRACT = "waiaas.call_contract";
-export const TOOL_WAIAAS_SEND_TOKEN = "waiaas.send_token";
-export const TOOL_WAIAAS_GET_TRANSACTION = "waiaas.get_transaction";
-export const TOOL_WAIAAS_SIGN_MESSAGE = "waiaas.sign_message";
-export const TOOL_WAIAAS_LIST_TRANSACTIONS = "waiaas.list_transactions";
+export const TOOL_WAIAAS_GET_BALANCE = "waiaas_get_balance";
+export const TOOL_WAIAAS_GET_ADDRESS = "waiaas_get_address";
+export const TOOL_WAIAAS_CALL_CONTRACT = "waiaas_call_contract";
+export const TOOL_WAIAAS_SEND_TOKEN = "waiaas_send_token";
+export const TOOL_WAIAAS_GET_TRANSACTION = "waiaas_get_transaction";
+export const TOOL_WAIAAS_SIGN_MESSAGE = "waiaas_sign_message";
+export const TOOL_WAIAAS_LIST_TRANSACTIONS = "waiaas_list_transactions";
 
 export const STATIC_PLUGIN_TOOL_NAMES = [
   TOOL_SYSTEM_HEALTH,
@@ -27,28 +27,28 @@ export const STATIC_PLUGIN_TOOL_NAMES = [
 ] as const;
 
 export const KNOWN_DYNAMIC_A2EX_TOOL_NAMES = [
-  "a2ex.skills.load_bundle",
-  "a2ex.skills.reload_bundle",
-  "a2ex.skills.generate_proposal_packet",
-  "a2ex.skills.stop_session",
-  "a2ex.skills.clear_stop",
-  "a2ex.onboarding.bootstrap_install",
-  "a2ex.onboarding.apply_action",
-  "a2ex.readiness.evaluate_route",
-  "a2ex.readiness.apply_action",
-  "a2ex.strategy_selection.materialize",
-  "a2ex.strategy_selection.apply_override",
-  "a2ex.strategy_selection.approve",
-  "a2ex.strategy_selection.reopen",
-  "a2ex.runtime.stop",
-  "a2ex.runtime.pause",
-  "a2ex.runtime.clear_stop",
-  "a2ex.venue.prepare_bridge",
-  "a2ex.venue.trade_polymarket",
-  "a2ex.venue.trade_hyperliquid",
-  "a2ex.venue.query_positions",
-  "a2ex.venue.bridge_status",
-  "a2ex.venue.derive_api_key",
+  "a2ex_skills_load_bundle",
+  "a2ex_skills_reload_bundle",
+  "a2ex_skills_generate_proposal_packet",
+  "a2ex_skills_stop_session",
+  "a2ex_skills_clear_stop",
+  "a2ex_onboarding_bootstrap_install",
+  "a2ex_onboarding_apply_action",
+  "a2ex_readiness_evaluate_route",
+  "a2ex_readiness_apply_action",
+  "a2ex_strategy_selection_materialize",
+  "a2ex_strategy_selection_apply_override",
+  "a2ex_strategy_selection_approve",
+  "a2ex_strategy_selection_reopen",
+  "a2ex_runtime_stop",
+  "a2ex_runtime_pause",
+  "a2ex_runtime_clear_stop",
+  "a2ex_venue_prepare_bridge",
+  "a2ex_venue_trade_polymarket",
+  "a2ex_venue_trade_hyperliquid",
+  "a2ex_venue_query_positions",
+  "a2ex_venue_bridge_status",
+  "a2ex_venue_derive_api_key",
 ] as const;
 
 // State file paths (relative to stateDir)

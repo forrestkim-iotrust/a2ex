@@ -11,10 +11,10 @@ use serde::{Deserialize, Serialize};
 // Tool name constants
 // ---------------------------------------------------------------------------
 
-pub const TOOL_CHAIN_READ: &str = "chain.read";
-pub const TOOL_CHAIN_EXECUTE: &str = "chain.execute";
-pub const TOOL_CHAIN_BALANCE: &str = "chain.balance";
-pub const TOOL_CHAIN_SIMULATE: &str = "chain.simulate";
+pub const TOOL_CHAIN_READ: &str = "chain_read";
+pub const TOOL_CHAIN_EXECUTE: &str = "chain_execute";
+pub const TOOL_CHAIN_BALANCE: &str = "chain_balance";
+pub const TOOL_CHAIN_SIMULATE: &str = "chain_simulate";
 
 // ---------------------------------------------------------------------------
 // Chain registry — chain_id → RPC URL

@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 // Tool name constants
 // ---------------------------------------------------------------------------
 
-pub const TOOL_DEFI_BRIDGE: &str = "defi.bridge";
-pub const TOOL_DEFI_APPROVE: &str = "defi.approve";
-pub const TOOL_DEFI_ANALYZE: &str = "defi.analyze";
+pub const TOOL_DEFI_BRIDGE: &str = "defi_bridge";
+pub const TOOL_DEFI_APPROVE: &str = "defi_approve";
+pub const TOOL_DEFI_ANALYZE: &str = "defi_analyze";
 
 // ---------------------------------------------------------------------------
 // Request types

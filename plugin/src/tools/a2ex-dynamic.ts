@@ -62,7 +62,7 @@ export function getA2exDynamicTools(): AnyAgentTool[] {
   const client = cachedClient;
 
   return cachedTools.map((tool): AnyAgentTool => ({
-    name: `${A2EX_TOOL_PREFIX}${tool.name}`,
+    name: `${A2EX_TOOL_PREFIX}${tool.name.replace(/\./g, "_")}`,
     description: tool.description ?? "",
     parameters: tool.inputSchema as JSONSchema7,
     execute: async (_toolCallId: string, params: Record<string, unknown>) => {

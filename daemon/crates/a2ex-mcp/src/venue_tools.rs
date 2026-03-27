@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 // Tool name constants — all follow the `venue.*` namespace
 // ---------------------------------------------------------------------------
 
-pub const TOOL_VENUE_PREPARE_BRIDGE: &str = "venue.prepare_bridge";
-pub const TOOL_VENUE_TRADE_POLYMARKET: &str = "venue.trade_polymarket";
-pub const TOOL_VENUE_TRADE_HYPERLIQUID: &str = "venue.trade_hyperliquid";
-pub const TOOL_VENUE_QUERY_POSITIONS: &str = "venue.query_positions";
-pub const TOOL_VENUE_BRIDGE_STATUS: &str = "venue.bridge_status";
-pub const TOOL_VENUE_DERIVE_API_KEY: &str = "venue.derive_api_key";
+pub const TOOL_VENUE_PREPARE_BRIDGE: &str = "venue_prepare_bridge";
+pub const TOOL_VENUE_TRADE_POLYMARKET: &str = "venue_trade_polymarket";
+pub const TOOL_VENUE_TRADE_HYPERLIQUID: &str = "venue_trade_hyperliquid";
+pub const TOOL_VENUE_QUERY_POSITIONS: &str = "venue_query_positions";
+pub const TOOL_VENUE_BRIDGE_STATUS: &str = "venue_bridge_status";
+pub const TOOL_VENUE_DERIVE_API_KEY: &str = "venue_derive_api_key";
 
 // ---------------------------------------------------------------------------
 // Request types
