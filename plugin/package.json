@@ -1,6 +1,6 @@
 {
   "name": "openclaw-plugin-a2ex",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "OpenClaw plugin for autonomous AI trading — Polymarket, Hyperliquid, and more",
   "main": "./dist/index.js",

@@ -24,11 +24,22 @@ export async function POST(req: NextRequest) {
   }).returning();
 
   try {
-    // Build SDL
+    // Generate per-deployment secrets
+    const gatewayToken = crypto.randomUUID();
+    const callbackToken = crypto.randomUUID();
+    const waiaasPassword = crypto.randomUUID();
+
+    // Build SDL with platform secrets
     const sdl = buildSDL({
       strategyId,
       fundAmountUsd: config.fundAmountUsd ?? 50,
       riskLevel: config.riskLevel ?? "medium",
+      openrouterApiKey: process.env.OPENROUTER_API_KEY!,
+      openclawGatewayToken: gatewayToken,
+      waiaasPassword,
+      callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://a2ex.xyz"}/api/agent/callback`,
+      deploymentId: deployment.id,
+      callbackToken,
     });
 
     await db.update(deployments)
@@ -47,7 +58,7 @@ export async function POST(req: NextRequest) {
       .set({
         status: "awaiting_bids",
         akashDseq: dseq,
-        config: { ...config, _manifest: manifest },
+        config: { ...config, _manifest: manifest, _gatewayToken: gatewayToken, _callbackToken: callbackToken },
       })
       .where(eq(deployments.id, deployment.id));
 

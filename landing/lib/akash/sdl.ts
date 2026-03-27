@@ -2,22 +2,35 @@ export interface DeployConfig {
   strategyId: string;
   fundAmountUsd: number;
   riskLevel: string;
+  // Platform secrets (injected server-side, not from user input)
+  openrouterApiKey: string;
+  openclawGatewayToken: string;
+  waiaasPassword: string;
+  callbackUrl: string;
+  deploymentId: string;
+  callbackToken: string;
 }
 
 export function buildSDL(config: DeployConfig): string {
-  // Structured SDL builder — no string interpolation from user input
   const sdl = {
     version: "2.0",
     services: {
       "a2ex-agent": {
-        image: "ghcr.io/iotrust/a2ex:latest",
+        image: "ghcr.io/forrestkim-iotrust/a2ex:latest",
         env: [
           `STRATEGY_ID=${sanitize(config.strategyId)}`,
           `FUND_LIMIT_USD=${Math.min(Math.max(config.fundAmountUsd, 10), 1000)}`,
           `RISK_LEVEL=${sanitize(config.riskLevel)}`,
+          `OPENROUTER_API_KEY=${config.openrouterApiKey}`,
+          `OPENCLAW_GATEWAY_TOKEN=${config.openclawGatewayToken}`,
+          `WAIAAS_MASTER_PASSWORD=${config.waiaasPassword}`,
+          `CALLBACK_URL=${config.callbackUrl}`,
+          `DEPLOYMENT_ID=${config.deploymentId}`,
+          `CALLBACK_TOKEN=${config.callbackToken}`,
         ],
         expose: [
           { port: 3100, as: 3100, to: [{ global: true }] },
+          { port: 18789, as: 18789, to: [{ global: true }] },
         ],
       },
     },
@@ -50,7 +63,6 @@ export function buildSDL(config: DeployConfig): string {
 }
 
 function sanitize(input: string): string {
-  // Only allow alphanumeric, hyphens, underscores
   return input.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
