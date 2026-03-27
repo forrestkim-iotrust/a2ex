@@ -39,13 +39,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/forrestkim-iotrust/a2ex
+          tags: |
+            type=raw,value=latest-${{ matrix.suffix }}
+            type=raw,value=${{ matrix.suffix }}-{{sha}}
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ghcr.io/forrestkim-iotrust/a2ex:${{ matrix.suffix }}-${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha,scope=${{ matrix.suffix }}
           cache-to: type=gha,scope=${{ matrix.suffix }},mode=max
 
@@ -60,18 +68,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/setup-buildx-action@v3
+
       - name: Create and push manifest
         run: |
-          SHA=${{ github.sha }}
           REPO=ghcr.io/forrestkim-iotrust/a2ex
-
-          docker manifest create $REPO:latest \
-            $REPO:amd64-$SHA \
-            $REPO:arm64-$SHA
-
-          docker manifest create $REPO:sha-${SHA::7} \
-            $REPO:amd64-$SHA \
-            $REPO:arm64-$SHA
-
-          docker manifest push $REPO:latest
-          docker manifest push $REPO:sha-${SHA::7}
+          docker buildx imagetools create -t $REPO:latest \
+            $REPO:latest-amd64 \
+            $REPO:latest-arm64
+          docker buildx imagetools create -t $REPO:sha-${GITHUB_SHA::7} \
+            $REPO:latest-amd64 \
+            $REPO:latest-arm64
