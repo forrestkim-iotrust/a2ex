@@ -24,10 +24,10 @@ export async function listAkashDeployments() {
   return akashFetch("/v1/deployments");
 }
 
-export async function createAkashDeployment(sdl: string) {
+export async function createAkashDeployment(sdl: string, depositUsd = 5) {
   return akashFetch("/v1/deployments", {
     method: "POST",
-    body: JSON.stringify({ data: { sdl, deposit: 500000 } }), // 0.5 AKT deposit
+    body: JSON.stringify({ data: { sdl, deposit: depositUsd } }),
   });
 }
 
@@ -36,12 +36,21 @@ export async function closeAkashDeployment(dseq: string) {
 }
 
 export async function getAkashBids(dseq: string) {
-  return akashFetch(`/v1/bids/${dseq}`);
+  return akashFetch(`/v1/bids?dseq=${dseq}`);
 }
 
-export async function createAkashLease(dseq: string, provider: string, gseq: number, oseq: number) {
+export async function createAkashLease(
+  dseq: string,
+  provider: string,
+  gseq: number,
+  oseq: number,
+  manifest: string,
+) {
   return akashFetch("/v1/leases", {
     method: "POST",
-    body: JSON.stringify({ data: { dseq, provider, gseq, oseq } }),
+    body: JSON.stringify({
+      manifest,
+      leases: [{ dseq, gseq, oseq, provider }],
+    }),
   });
 }

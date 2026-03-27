@@ -17,7 +17,7 @@ export function buildSDL(config: DeployConfig): string {
           `RISK_LEVEL=${sanitize(config.riskLevel)}`,
         ],
         expose: [
-          { port: 3100, as: 3100, to: [{ global: false }] },
+          { port: 3100, as: 3100, to: [{ global: true }] },
         ],
       },
     },
