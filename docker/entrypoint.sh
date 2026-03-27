@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 echo "[a2ex] Initializing WAIaaS..."
 waiaas init --auto-provision || true
@@ -45,6 +45,12 @@ if [ -n "${OPENROUTER_API_KEY:-}" ]; then
     --gateway-bind lan --flow quickstart --skip-health 2>/dev/null || true
   echo "[a2ex] OpenClaw re-onboarded with runtime API key"
 fi
+
+echo "[a2ex] System info:"
+echo "  arch=$(uname -m) os=$(uname -s)"
+echo "  disk=$(df -h / | tail -1)"
+echo "  node=$(node --version) npm=$(npm --version)"
+echo "  waiaas=$(which waiaas) openclaw=$(which openclaw)"
 
 echo "[a2ex] Starting OpenClaw gateway on :18789..."
 exec npx -y openclaw@latest gateway \
