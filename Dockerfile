@@ -34,13 +34,8 @@ RUN pnpm build
 FROM node:22-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl && \
+    tini curl && \
     rm -rf /var/lib/apt/lists/*
-
-# Install tini (correct arch via deb package)
-ARG TARGETARCH
-RUN curl -fsSL -o /tmp/tini.deb "https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-${TARGETARCH}.deb" && \
-    dpkg -i /tmp/tini.deb && rm /tmp/tini.deb
 
 RUN npm install -g openclaw @waiaas/cli && npm cache clean --force
 
