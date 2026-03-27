@@ -25,9 +25,9 @@ export function buildSDL(config: DeployConfig): string {
       compute: {
         "a2ex-agent": {
           resources: {
-            cpu: { units: "0.5" },
-            memory: { size: "512Mi" },
-            storage: [{ size: "1Gi" }],
+            cpu: { units: "1" },
+            memory: { size: "2Gi" },
+            storage: [{ size: "5Gi" }],
           },
         },
       },
