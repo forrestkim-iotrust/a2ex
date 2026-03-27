@@ -54,10 +54,11 @@ function truncateAddress(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-function statusColor(status: string): string {
+function statusColor(status: string, phase?: string, unhealthy?: boolean): string {
+  if (unhealthy) return "bg-warning";
   switch (status) {
     case "active":
-      return "bg-success";
+      return phase === "trading" ? "bg-success" : phase === "ready" ? "bg-success" : "bg-accent";
     case "pending":
     case "sdl_generated":
     case "awaiting_bids":
@@ -72,26 +73,25 @@ function statusColor(status: string): string {
   }
 }
 
-function statusLabel(status: string): string {
+function statusLabel(status: string, phase?: string, unhealthy?: boolean): string {
+  if (unhealthy) return "Unhealthy";
+  if (status === "active") {
+    switch (phase) {
+      case "bootstrap": return "Creating Wallet...";
+      case "ready": return "Agent Ready";
+      case "trading": return "Trading";
+      default: return "Initializing...";
+    }
+  }
   switch (status) {
-    case "active":
-      return "Agent Running";
-    case "pending":
-      return "Creating...";
-    case "sdl_generated":
-      return "Config Built";
-    case "awaiting_bids":
-      return "Finding Providers";
-    case "selecting_provider":
-      return "Selecting Provider";
-    case "terminating":
-      return "Shutting Down";
-    case "terminated":
-      return "Terminated";
-    case "failed":
-      return "Failed";
-    default:
-      return status;
+    case "pending": return "Creating...";
+    case "sdl_generated": return "Config Built";
+    case "awaiting_bids": return "Finding Providers";
+    case "selecting_provider": return "Selecting Provider";
+    case "terminating": return "Shutting Down";
+    case "terminated": return "Terminated";
+    case "failed": return "Failed";
+    default: return status;
   }
 }
 
@@ -180,6 +180,8 @@ export default function DashboardPage() {
   const [uptime, setUptime] = useState("00:00:00");
   const [fetchError, setFetchError] = useState(false);
   const [bidCount, setBidCount] = useState(0);
+  const [prevTradeIds, setPrevTradeIds] = useState<Set<string>>(new Set());
+  const [newTradeIds, setNewTradeIds] = useState<Set<string>>(new Set());
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -305,9 +307,27 @@ export default function DashboardPage() {
   // --- First trade confetti ---
   useFirstTradeConfetti(data?.trades ?? []);
 
+  // --- Track new trades for flash animation ---
+  useEffect(() => {
+    if (!data?.trades?.length) return;
+    const currentIds = new Set(data.trades.map((t) => t.id));
+    const fresh = data.trades.filter((t) => !prevTradeIds.has(t.id)).map((t) => t.id);
+    if (fresh.length > 0 && prevTradeIds.size > 0) {
+      setNewTradeIds(new Set(fresh));
+      setTimeout(() => setNewTradeIds(new Set()), 2000);
+    }
+    setPrevTradeIds(currentIds);
+  }, [data?.trades]);
+
   // --- Derived state ---
   const status = data?.deployment?.status ?? "pending";
   const isTerminated = status === "terminated" || status === "failed";
+  const config = data?.deployment?.config as Record<string, any> | undefined;
+  const phase = config?._phase as string | undefined;
+  const lastHeartbeat = config?._lastHeartbeat as string | undefined;
+  const unhealthy = status === "active" && lastHeartbeat
+    ? (Date.now() - new Date(lastHeartbeat).getTime()) > 60000
+    : false;
   const trades = data?.trades?.length ? data.trades : demoTrades;
   const totalPnl = data?.trades?.length
     ? data.trades.reduce((sum, t) => sum + parseFloat(t.pnlUsd || "0"), 0)
@@ -364,11 +384,11 @@ export default function DashboardPage() {
             className="flex items-center gap-2 rounded-sm bg-accent-subtle border border-accent/15 px-4 py-3"
           >
             <span
-              className={`w-2 h-2 rounded-full ${statusColor(status)} ${
-                status === "active" ? "animate-pulse" : ""
+              className={`w-2 h-2 rounded-full ${statusColor(status, phase, unhealthy)} ${
+                status === "active" && !unhealthy ? "animate-pulse" : ""
               }`}
             />
-            <span className="text-[13px] font-semibold">{statusLabel(status)}</span>
+            <span className="text-[13px] font-semibold">{statusLabel(status, phase, unhealthy)}</span>
           </motion.div>
 
           <div>
@@ -394,14 +414,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {fetchError && (
-            <div className="text-xs text-danger">Connection lost. Retrying...</div>
+          {unhealthy && (
+            <div className="text-xs text-warning">
+              Agent not responding. Last seen: {lastHeartbeat ? `${Math.round((Date.now() - new Date(lastHeartbeat).getTime()) / 1000)}s ago` : "never"}
+            </div>
+          )}
+          {fetchError && !unhealthy && (
+            <div className="text-xs text-text-muted">Reconnecting...</div>
           )}
 
           {/* Kill Switch */}
           <button
             onClick={handleKillSwitch}
-            disabled={isTerminating || isTerminated}
+            disabled={isTerminating || isTerminated || isDeploying(status)}
             className="mt-auto py-3 text-center bg-danger/10 text-danger border border-danger/20 rounded-sm font-semibold text-sm transition-all hover:bg-danger/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isTerminated
@@ -459,9 +484,10 @@ export default function DashboardPage() {
                 <motion.div
                   key={trade.id}
                   initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  animate={{ opacity: 1, x: 0, backgroundColor: newTradeIds.has(trade.id) ? "rgba(240, 160, 48, 0.15)" : "transparent" }}
                   exit={{ opacity: 0 }}
-                  className="grid grid-cols-[auto_1fr_auto_auto] gap-4 py-2.5 border-b border-border last:border-0 text-[13px] items-center"
+                  transition={{ backgroundColor: { duration: 2 } }}
+                  className="grid grid-cols-[auto_1fr_auto_auto] gap-4 py-2.5 border-b border-border last:border-0 text-[13px] items-center rounded-sm"
                 >
                   <span className="font-mono text-xs text-text-muted">
                     {new Date(trade.ts).toLocaleTimeString("en-US", { hour12: false })}
@@ -548,15 +574,19 @@ export default function DashboardPage() {
                 placeholder={
                   isTerminated
                     ? "Agent is terminated"
-                    : "Ask your agent anything..."
+                    : isDeploying(status)
+                      ? "Agent is starting up..."
+                      : phase === "ready"
+                        ? "Ask about the market, your strategy, or recent trades..."
+                        : "Ask your agent anything..."
                 }
                 maxLength={500}
-                disabled={isTerminated}
+                disabled={isTerminated || isDeploying(status)}
                 className="flex-1 px-3.5 py-2.5 bg-bg border border-border rounded-sm text-sm outline-none focus:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSendChat}
-                disabled={isTerminated || !chatInput.trim()}
+                disabled={isTerminated || isDeploying(status) || !chatInput.trim()}
                 className="px-5 py-2.5 bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Send
