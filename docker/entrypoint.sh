@@ -1,12 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "[a2ex] Starting WAIaaS..."
-waiaas init --non-interactive \
-  --master-password "${WAIAAS_MASTER_PASSWORD:-auto-$(hostname)}" \
-  --network "${WAIAAS_NETWORK:-arbitrum-mainnet}" || true
+echo "[a2ex] Initializing WAIaaS..."
+waiaas init --auto-provision || true
 
-waiaas serve --port 3100 &
+echo "[a2ex] Starting WAIaaS daemon..."
+waiaas start &
 WAIAAS_PID=$!
 
 # Wait for WAIaaS health (max 30s)
@@ -23,7 +22,7 @@ done
 export A2EX_BINARY_PATH="/usr/local/bin/a2ex-mcp"
 export A2EX_WAIAAS_BASE_URL="http://localhost:3100"
 
-# WAIaaS health monitor (background) — exit container if WAIaaS dies
+# WAIaaS health monitor (background)
 (
   FAIL_COUNT=0
   while true; do
@@ -38,7 +37,16 @@ export A2EX_WAIAAS_BASE_URL="http://localhost:3100"
   done
 ) &
 
+# Re-onboard with real API key (overwrites build-time placeholder)
+if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+  npx -y openclaw@latest onboard --non-interactive --accept-risk \
+    --auth-choice openrouter-api-key --openrouter-api-key "$OPENROUTER_API_KEY" \
+    --gateway-auth token --gateway-token "${OPENCLAW_GATEWAY_TOKEN:-default}" \
+    --gateway-bind lan --flow quickstart --skip-health 2>/dev/null || true
+  echo "[a2ex] OpenClaw re-onboarded with runtime API key"
+fi
+
 echo "[a2ex] Starting OpenClaw gateway on :18789..."
-exec openclaw gateway \
+exec npx -y openclaw@latest gateway \
   --allow-unconfigured --bind lan \
   --token "${OPENCLAW_GATEWAY_TOKEN}"

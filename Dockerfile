@@ -56,31 +56,26 @@ COPY --from=plugin-builder /build/node_modules/ /opt/a2ex-plugin/node_modules/
 # Switch to openclaw user for plugin install + config
 USER openclaw
 
+# Onboard OpenClaw (creates base config — API key injected at runtime in entrypoint)
+RUN npx -y openclaw@latest onboard --non-interactive --accept-risk \
+  --auth-choice openrouter-api-key --openrouter-api-key "build-placeholder" \
+  --gateway-auth token --gateway-token "build-placeholder" \
+  --gateway-bind lan --flow quickstart --skip-health || true
+
 # Install plugin into OpenClaw
 RUN npx -y openclaw@latest plugins install --link /opt/a2ex-plugin || true
 
-# Patch OpenClaw config
-RUN node -e " \
-  const fs = require('fs'); \
-  const home = require('os').homedir(); \
-  const cfgPath = home + '/.openclaw/settings.json'; \
-  let cfg = {}; \
-  try { cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch {} \
-  cfg.agents = cfg.agents || {}; \
-  cfg.agents.defaults = cfg.agents.defaults || {}; \
-  cfg.agents.defaults.model = { primary: 'openrouter/minimax/minimax-m2.7' }; \
-  cfg.plugins = { allow: ['openclaw-plugin-a2ex'] }; \
-  cfg.tools = { allow: ['group:plugins'] }; \
-  cfg.gateway = cfg.gateway || {}; \
-  cfg.gateway.http = { endpoints: { responses: { enabled: true }, chatCompletions: { enabled: true } } }; \
-  cfg.gateway.controlUi = { allowedOrigins: ['*'] }; \
-  fs.mkdirSync(require('path').dirname(cfgPath), { recursive: true }); \
-  fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2)); \
-  console.log('Config patched:', cfgPath); \
-"
+# Patch OpenClaw config via CLI (the canonical way)
+RUN npx -y openclaw@latest config set agents.defaults.model.primary "openrouter/x-ai/grok-4.1-fast" && \
+    npx -y openclaw@latest config set plugins.allow '["openclaw-plugin-a2ex"]' --strict-json && \
+    npx -y openclaw@latest config set tools.allow '["group:plugins"]' --strict-json && \
+    npx -y openclaw@latest config set gateway.http.endpoints.responses.enabled true --strict-json && \
+    npx -y openclaw@latest config set gateway.http.endpoints.chatCompletions.enabled true --strict-json && \
+    npx -y openclaw@latest config set gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback true --strict-json && \
+    echo "Config patched via CLI"
 
-# Remove identity (security — each deploy gets fresh identity)
-RUN rm -rf ~/.openclaw/identity 2>/dev/null || true
+# Remove identity + stale settings.js (security — each deploy gets fresh identity)
+RUN rm -rf ~/.openclaw/identity ~/.openclaw/settings.js ~/.openclaw/settings.json 2>/dev/null || true
 
 # Copy entrypoint
 COPY --chown=openclaw:openclaw docker/entrypoint.sh /entrypoint.sh
