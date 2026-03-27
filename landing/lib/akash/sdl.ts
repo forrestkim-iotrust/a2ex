@@ -40,7 +40,7 @@ export function buildSDL(config: DeployConfig): string {
           resources: {
             cpu: { units: "1" },
             memory: { size: "4Gi" },
-            storage: [{ size: "5Gi" }],
+            storage: [{ size: "10Gi" }],
           },
         },
       },
