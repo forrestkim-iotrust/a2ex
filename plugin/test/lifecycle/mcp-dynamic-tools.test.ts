@@ -72,13 +72,13 @@ describe("MCP dynamic tools lifecycle", () => {
     const toolNames = tools!.map((t) => t.name);
 
     // Dynamic a2ex.* tool must be present
-    expect(toolNames).toContain("a2ex.onboarding.bootstrap_install");
+    expect(toolNames).toContain("a2ex_onboarding_bootstrap_install");
 
     // waiaas tools should also be present
     expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
   });
 
-  it("a2ex.onboarding.bootstrap_install executes and returns mock response", async () => {
+  it("a2ex_onboarding_bootstrap_install executes and returns mock response", async () => {
     const stateSubdir = join(stateDir, STATE_SUBDIR);
     await mkdir(stateSubdir, { recursive: true });
 
@@ -102,7 +102,7 @@ describe("MCP dynamic tools lifecycle", () => {
     expect(tools).not.toBeNull();
 
     const bootstrapTool = tools!.find(
-      (t) => t.name === "a2ex.onboarding.bootstrap_install",
+      (t) => t.name === "a2ex_onboarding_bootstrap_install",
     );
     expect(bootstrapTool).toBeDefined();
 
@@ -141,7 +141,7 @@ describe("MCP dynamic tools lifecycle", () => {
 
     // Should have waiaas tools but no a2ex.* dynamic tools
     expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
-    expect(toolNames.some((n) => n.startsWith("a2ex.onboarding"))).toBe(false);
+    expect(toolNames.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
   });
 
   it("stopA2ex removes dynamic tools from resolveTools (graceful degradation)", async () => {
@@ -166,7 +166,7 @@ describe("MCP dynamic tools lifecycle", () => {
 
     // Verify a2ex tools are present
     let tools = sim.resolveTools();
-    expect(tools!.some((t) => t.name.startsWith("a2ex.onboarding"))).toBe(true);
+    expect(tools!.some((t) => t.name.startsWith("a2ex_onboarding"))).toBe(true);
 
     // Stop a2ex
     await stopA2ex();
@@ -175,7 +175,7 @@ describe("MCP dynamic tools lifecycle", () => {
     tools = sim.resolveTools();
     expect(tools).not.toBeNull();
     const toolNames = tools!.map((t) => t.name);
-    expect(toolNames.some((n) => n.startsWith("a2ex.onboarding"))).toBe(false);
+    expect(toolNames.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
     expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
   });
 });

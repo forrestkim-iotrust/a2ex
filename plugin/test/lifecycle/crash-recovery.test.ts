@@ -85,8 +85,8 @@ describe("crash recovery lifecycle", () => {
     expect(toolsBefore).not.toBeNull();
 
     const namesBefore = toolsBefore!.map((t) => t.name);
-    expect(namesBefore).toContain("a2ex.onboarding.bootstrap_install");
-    expect(namesBefore).toContain("a2ex.system_health");
+    expect(namesBefore).toContain("a2ex_onboarding_bootstrap_install");
+    expect(namesBefore).toContain("a2ex_system_health");
     expect(namesBefore.some((n) => n.startsWith("waiaas."))).toBe(true);
 
     // --- Phase 2: simulate crash — clearMcpCache mimics onClose effect ---
@@ -97,9 +97,9 @@ describe("crash recovery lifecycle", () => {
 
     const namesDegraded = toolsDegraded!.map((t) => t.name);
     // Dynamic a2ex.onboarding/skills/runtime tools should be gone (from MCP)
-    expect(namesDegraded.some((n) => n.startsWith("a2ex.onboarding"))).toBe(false);
+    expect(namesDegraded.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
     // Static a2ex tools remain (system_health, waiaas)
-    expect(namesDegraded).toContain("a2ex.system_health");
+    expect(namesDegraded).toContain("a2ex_system_health");
     expect(namesDegraded.some((n) => n.startsWith("waiaas."))).toBe(true);
 
     // --- Phase 3: simulate recovery — re-populate MCP cache ---
@@ -127,8 +127,8 @@ describe("crash recovery lifecycle", () => {
     expect(toolsRecovered).not.toBeNull();
 
     const namesRecovered = toolsRecovered!.map((t) => t.name);
-    expect(namesRecovered).toContain("a2ex.onboarding.bootstrap_install");
-    expect(namesRecovered).toContain("a2ex.system_health");
+    expect(namesRecovered).toContain("a2ex_onboarding_bootstrap_install");
+    expect(namesRecovered).toContain("a2ex_system_health");
     expect(namesRecovered.some((n) => n.startsWith("waiaas."))).toBe(true);
   });
 
@@ -143,7 +143,7 @@ describe("crash recovery lifecycle", () => {
     const tools = sim.resolveTools();
     expect(tools).not.toBeNull();
     // MCP dynamic tools (from mock server) should be present
-    expect(tools!.some((t) => t.name.startsWith("a2ex.onboarding"))).toBe(true);
+    expect(tools!.some((t) => t.name.startsWith("a2ex_onboarding"))).toBe(true);
 
     // Capture the current MCP cache state before stop
     const cacheBefore = getMcpCache();
@@ -159,8 +159,8 @@ describe("crash recovery lifecycle", () => {
     const toolsAfter = sim.resolveTools();
     expect(toolsAfter).not.toBeNull();
     const namesAfter = toolsAfter!.map((t) => t.name);
-    expect(namesAfter.some((n) => n.startsWith("a2ex.onboarding"))).toBe(false);
-    expect(namesAfter).toContain("a2ex.system_health");
+    expect(namesAfter.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
+    expect(namesAfter).toContain("a2ex_system_health");
   });
 
   it("service start() uses startA2exWithRecovery (tools available after start)", async () => {
@@ -178,7 +178,7 @@ describe("crash recovery lifecycle", () => {
 
     const names = tools!.map((t) => t.name);
     // The mock server registers onboarding.bootstrap_install
-    expect(names).toContain("a2ex.onboarding.bootstrap_install");
+    expect(names).toContain("a2ex_onboarding_bootstrap_install");
     // The recovery handle exists (proven by the fact that tools loaded
     // through startA2exWithRecovery's connectWithRecovery path)
     expect(getMcpCache()).not.toBeNull();
@@ -204,7 +204,7 @@ describe("crash recovery lifecycle", () => {
     // With no binaryPath, tools won't include a2ex.* but should still resolve
     const tools = sim.resolveTools();
     expect(tools).not.toBeNull();
-    expect(tools!.some((t) => t.name === "a2ex.system_health")).toBe(true);
+    expect(tools!.some((t) => t.name === "a2ex_system_health")).toBe(true);
   });
 
   it("WAIaaS healthcheck is NOT wired when waiaasPid is missing from state", async () => {

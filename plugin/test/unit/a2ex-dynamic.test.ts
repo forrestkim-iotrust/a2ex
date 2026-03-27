@@ -82,9 +82,9 @@ describe("getA2exDynamicTools", () => {
 
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual([
-      "a2ex.onboarding.bootstrap_install",
-      "a2ex.runtime.stop",
-      "a2ex.skills.load_bundle",
+      "a2ex_onboarding_bootstrap_install",
+      "a2ex_runtime_stop",
+      "a2ex_skills_load_bundle",
     ]);
   });
 
@@ -123,7 +123,7 @@ describe("getA2exDynamicTools", () => {
 
     const tools = getA2exDynamicTools();
     const bootstrapTool = tools.find(
-      (t) => t.name === "a2ex.onboarding.bootstrap_install",
+      (t) => t.name === "a2ex_onboarding_bootstrap_install",
     )!;
 
     const params = { url: "https://example.com/a2ex-v2.0.0" };
@@ -142,7 +142,7 @@ describe("getA2exDynamicTools", () => {
 
     const tools = getA2exDynamicTools();
     const bootstrapTool = tools.find(
-      (t) => t.name === "a2ex.onboarding.bootstrap_install",
+      (t) => t.name === "a2ex_onboarding_bootstrap_install",
     )!;
 
     expect(bootstrapTool.parameters).toEqual(
