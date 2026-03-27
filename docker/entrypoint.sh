@@ -39,7 +39,7 @@ export A2EX_WAIAAS_BASE_URL="http://localhost:3100"
 
 # Re-onboard with real API key (overwrites build-time placeholder)
 if [ -n "${OPENROUTER_API_KEY:-}" ]; then
-  npx -y openclaw@latest onboard --non-interactive --accept-risk \
+  openclaw onboard --non-interactive --accept-risk \
     --auth-choice openrouter-api-key --openrouter-api-key "$OPENROUTER_API_KEY" \
     --gateway-auth token --gateway-token "${OPENCLAW_GATEWAY_TOKEN:-default}" \
     --gateway-bind lan --flow quickstart --skip-health 2>/dev/null || true
@@ -53,6 +53,6 @@ echo "  node=$(node --version) npm=$(npm --version)"
 echo "  waiaas=$(which waiaas) openclaw=$(which openclaw)"
 
 echo "[a2ex] Starting OpenClaw gateway on :18789..."
-exec npx -y openclaw@latest gateway \
+exec openclaw gateway \
   --allow-unconfigured --bind lan \
   --token "${OPENCLAW_GATEWAY_TOKEN}"

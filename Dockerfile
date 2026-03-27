@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tini curl && \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g openclaw @waiaas/cli && npm cache clean --force
+RUN npm install -g openclaw @waiaas/cli
 
 RUN useradd -m -s /bin/bash openclaw
 
