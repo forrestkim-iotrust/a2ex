@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
     .limit(50);
 
   const messages = await db.select().from(agentMessages)
-    .where(and(eq(agentMessages.deploymentId, deploymentId), eq(agentMessages.direction, "agent_to_user")))
+    .where(eq(agentMessages.deploymentId, deploymentId))
     .orderBy(desc(agentMessages.ts))
-    .limit(20);
+    .limit(40);
 
   return NextResponse.json({ deployment, trades: recentTrades, messages });
 }

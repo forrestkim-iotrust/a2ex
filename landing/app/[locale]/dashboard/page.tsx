@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import Link from "next/link";
 import { useFirstTradeConfetti } from "@/lib/hooks/useFirstTradeConfetti";
 
 interface Trade {
@@ -58,8 +59,11 @@ function statusColor(status: string): string {
     case "active":
       return "bg-success";
     case "pending":
+    case "sdl_generated":
+    case "awaiting_bids":
+    case "selecting_provider":
     case "terminating":
-      return "bg-yellow-400";
+      return "bg-accent";
     case "terminated":
     case "failed":
       return "bg-danger";
@@ -73,7 +77,13 @@ function statusLabel(status: string): string {
     case "active":
       return "Agent Running";
     case "pending":
-      return "Starting Up";
+      return "Creating...";
+    case "sdl_generated":
+      return "Config Built";
+    case "awaiting_bids":
+      return "Finding Providers";
+    case "selecting_provider":
+      return "Selecting Provider";
     case "terminating":
       return "Shutting Down";
     case "terminated":
@@ -85,6 +95,71 @@ function statusLabel(status: string): string {
   }
 }
 
+const DEPLOY_STEPS = [
+  { key: "pending", label: "Create", desc: "Initializing deployment" },
+  { key: "sdl_generated", label: "Build", desc: "Configuration generated" },
+  { key: "awaiting_bids", label: "Discover", desc: "Searching Akash providers" },
+  { key: "selecting_provider", label: "Select", desc: "Choosing best provider" },
+  { key: "active", label: "Live", desc: "Agent is running" },
+] as const;
+
+const DEPLOY_ORDER = DEPLOY_STEPS.map((s) => s.key);
+
+function isDeploying(status: string): boolean {
+  return DEPLOY_ORDER.includes(status as any) && status !== "active";
+}
+
+function DeployProgress({ status, bidCount }: { status: string; bidCount?: number }) {
+  const currentIdx = DEPLOY_ORDER.indexOf(status as any);
+
+  return (
+    <div className="bg-surface rounded-md p-6 space-y-4">
+      <div className="text-[13px] font-semibold text-text-muted">Deploying to Akash Network</div>
+      <div className="flex items-center gap-1">
+        {DEPLOY_STEPS.map((step, i) => {
+          const done = i < currentIdx;
+          const active = i === currentIdx;
+          return (
+            <div key={step.key} className="flex-1 flex flex-col items-center gap-2">
+              <div className="w-full flex items-center">
+                <motion.div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    done
+                      ? "bg-accent text-bg"
+                      : active
+                        ? "bg-accent/20 text-accent border-2 border-accent"
+                        : "bg-border text-text-muted"
+                  }`}
+                  animate={active ? { scale: [1, 1.15, 1] } : {}}
+                  transition={active ? { repeat: Infinity, duration: 1.5 } : {}}
+                >
+                  {done ? "✓" : i + 1}
+                </motion.div>
+                {i < DEPLOY_STEPS.length - 1 && (
+                  <div className={`flex-1 h-[2px] mx-1 ${done ? "bg-accent" : "bg-border"}`} />
+                )}
+              </div>
+              <div className="text-center">
+                <div className={`text-[11px] font-semibold ${active ? "text-accent" : done ? "text-text-muted" : "text-text-muted/50"}`}>
+                  {step.label}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-center">
+        <div className="text-sm text-accent font-medium">
+          {DEPLOY_STEPS[currentIdx]?.desc ?? "Processing..."}
+        </div>
+        {status === "awaiting_bids" && bidCount !== undefined && bidCount > 0 && (
+          <div className="text-xs text-text-muted mt-1 font-mono">{bidCount} providers found</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const demoTrades: Trade[] = [
   { id: "1", venue: "Polymarket", action: "BUY", amountUsd: "10.00", pnlUsd: "3.20", ts: new Date().toISOString() },
   { id: "2", venue: "Polymarket", action: "SELL", amountUsd: "8.50", pnlUsd: "1.87", ts: new Date().toISOString() },
@@ -94,6 +169,8 @@ const demoTrades: Trade[] = [
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const locale = pathname.split("/")[1] || "en";
   const deploymentId = searchParams.get("deploymentId");
 
   const [data, setData] = useState<DeploymentData | null>(null);
@@ -102,6 +179,7 @@ export default function DashboardPage() {
   const [isTerminating, setIsTerminating] = useState(false);
   const [uptime, setUptime] = useState("00:00:00");
   const [fetchError, setFetchError] = useState(false);
+  const [bidCount, setBidCount] = useState(0);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,6 +210,27 @@ export default function DashboardPage() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [deploymentId, fetchData]);
+
+  // --- Deploy progress polling (fast, 2s) when deploying ---
+  useEffect(() => {
+    const status = data?.deployment?.status;
+    if (!deploymentId || !status || !isDeploying(status)) return;
+
+    const pollProgress = async () => {
+      try {
+        const res = await fetch(`/api/deploy/progress?deploymentId=${deploymentId}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.bidCount) setBidCount(json.bidCount);
+        // Refresh main data if status changed
+        if (json.status !== status) fetchData();
+      } catch { /* retry next tick */ }
+    };
+
+    pollProgress();
+    const interval = setInterval(pollProgress, 2000);
+    return () => clearInterval(interval);
+  }, [deploymentId, data?.deployment?.status, fetchData]);
 
   // --- Uptime ticker (1s) ---
   useEffect(() => {
@@ -214,10 +313,15 @@ export default function DashboardPage() {
     ? data.trades.reduce((sum, t) => sum + parseFloat(t.pnlUsd || "0"), 0)
     : 12.47;
 
-  // Merge server messages (agent_to_user) with local user messages, sorted by time
+  // Merge server messages with local optimistic messages, deduplicate by content+time
+  const serverMessages = data?.messages ?? [];
+  const serverContentSet = new Set(serverMessages.map((m) => m.content + m.direction));
+  const uniqueLocal = localMessages.filter(
+    (m) => !serverContentSet.has(m.content + m.direction)
+  );
   const allMessages: Message[] = [
-    ...(data?.messages ?? []),
-    ...localMessages,
+    ...serverMessages,
+    ...uniqueLocal,
   ].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
 
   // --- No deployment selected ---
@@ -235,8 +339,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pt-14">
-      <div className="flex h-[calc(100vh-56px)]">
+    <div className="min-h-screen">
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-bg/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-[1440px] px-6 flex items-center justify-between h-14">
+          <Link href={`/${locale}`} className="text-lg font-bold tracking-tight hover:text-accent transition">
+            a2ex<span className="text-accent">.</span>
+          </Link>
+          <div className="flex items-center gap-4 text-[13px]">
+            <span className="text-text-muted">Dashboard</span>
+            <Link href={`/${locale}`} className="text-text-muted hover:text-accent transition">
+              Deploy New
+            </Link>
+          </div>
+        </div>
+      </nav>
+      <div className="flex h-[calc(100vh-56px)] pt-14">
         {/* Sidebar */}
         <aside className="w-[240px] border-r border-border bg-surface p-6 flex flex-col gap-6 shrink-0">
           {/* Status */}
@@ -296,6 +414,16 @@ export default function DashboardPage() {
 
         {/* Main */}
         <main className="flex-1 p-6 overflow-y-auto space-y-4">
+          {/* Deploy Progress (shown during deployment) */}
+          {isDeploying(status) && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <DeployProgress status={status} bidCount={bidCount} />
+            </motion.div>
+          )}
+
           {/* P&L */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}

@@ -18,6 +18,12 @@ export default function Home() {
             a2ex<span className="text-accent">.</span>
           </span>
           <div className="flex items-center gap-4">
+            <Link
+              href={`/${locale}/dashboard`}
+              className="text-[13px] text-text-muted hover:text-accent transition"
+            >
+              Dashboard
+            </Link>
             <LanguageSwitcher />
             <ConnectWalletButton />
           </div>

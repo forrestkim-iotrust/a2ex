@@ -3,6 +3,7 @@ const AKASH_API = "https://console-api.akash.network";
 async function akashFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${AKASH_API}${path}`, {
     ...options,
+    cache: "no-store",
     headers: {
       "x-api-key": process.env.AKASH_CONSOLE_API_KEY!,
       "Content-Type": "application/json",
