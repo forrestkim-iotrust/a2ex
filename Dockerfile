@@ -37,9 +37,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install tini from GitHub releases (correct arch)
+# Install tini (correct arch via deb package)
 ARG TARGETARCH
-RUN curl -fsSL "https://github.com/krallin/tini/releases/latest/download/tini-${TARGETARCH}" -o /usr/bin/tini && chmod +x /usr/bin/tini
+RUN curl -fsSL -o /tmp/tini.deb "https://github.com/krallin/tini/releases/download/v0.19.0/tini_0.19.0-${TARGETARCH}.deb" && \
+    dpkg -i /tmp/tini.deb && rm /tmp/tini.deb
 
 RUN npm install -g openclaw @waiaas/cli && npm cache clean --force
 
