@@ -1,6 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useAccount } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
 
 interface Strategy {
   id: string;
@@ -57,6 +61,45 @@ function Sparkline({ data }: { data: number[] }) {
 }
 
 export default function StrategyComparison({ onSelect }: { onSelect?: (id: string) => void }) {
+  const { isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [deploying, setDeploying] = useState<string | null>(null);
+
+  const locale = pathname.split("/")[1] || "en";
+
+  const handleSelect = async (strategyId: string) => {
+    if (onSelect) {
+      onSelect(strategyId);
+      return;
+    }
+
+    if (!isConnected) {
+      openConnectModal?.();
+      return;
+    }
+
+    setDeploying(strategyId);
+    try {
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyId, config: { fundAmountUsd: 50 } }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.id) {
+        alert(data.error ?? "Deploy failed. Please try again.");
+        return;
+      }
+      router.push(`/${locale}/dashboard?deploymentId=${data.id}`);
+    } catch {
+      alert("Network error. Could not start deployment.");
+    } finally {
+      setDeploying(null);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-[2px] bg-border rounded-lg overflow-hidden">
       {strategies.map((s) => (
@@ -79,10 +122,11 @@ export default function StrategyComparison({ onSelect }: { onSelect?: (id: strin
           </div>
           <Sparkline data={s.performance.sparkline} />
           <button
-            onClick={() => onSelect?.(s.id)}
-            className="mt-auto py-2.5 text-center bg-accent-subtle text-accent rounded-sm font-semibold text-sm border border-transparent hover:border-accent transition-all"
+            onClick={() => handleSelect(s.id)}
+            disabled={deploying === s.id}
+            className="mt-auto py-2.5 text-center bg-accent-subtle text-accent rounded-sm font-semibold text-sm border border-transparent hover:border-accent transition-all disabled:opacity-50"
           >
-            Select Strategy
+            {deploying === s.id ? "Deploying..." : isConnected ? "Deploy Agent" : "Connect & Deploy"}
           </button>
         </div>
       ))}

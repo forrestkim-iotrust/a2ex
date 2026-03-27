@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       .where(eq(deployments.id, deployment.id));
 
     return NextResponse.json({
-      deploymentId: deployment.id,
+      id: deployment.id,
       akashDseq: dseq,
       status: "bid_received",
     });
@@ -53,10 +53,11 @@ export async function POST(req: NextRequest) {
       .set({ status: "failed" })
       .where(eq(deployments.id, deployment.id));
 
-    return NextResponse.json(
-      { error: error.message, deploymentId: deployment.id, status: "failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      id: deployment.id,
+      error: error.message,
+      status: "failed",
+    });
   }
 }
 
