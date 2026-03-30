@@ -18,9 +18,7 @@ async function bestOpenBid(bids: any[]) {
   try {
     const providers = await getAkashProviders();
     for (const p of providers) {
-      if (p.owner && p.uptime7d != null) {
-        providerMap[p.owner] = p.uptime7d;
-      }
+      if (p.owner && p.uptime7d != null) providerMap[p.owner] = p.uptime7d;
     }
   } catch { /* fallback to no filter */ }
 
