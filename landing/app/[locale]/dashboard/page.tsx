@@ -351,10 +351,12 @@ export default function DashboardPage() {
   const unhealthy = status === "active" && lastHeartbeat
     ? (Date.now() - new Date(lastHeartbeat).getTime()) > 60000
     : false;
-  const trades = data?.trades?.length ? data.trades : demoTrades;
+  // Only show demo data when agent is active and has no real trades
+  const showDemo = status === "active" && gatewayAlive && !data?.trades?.length;
+  const trades = data?.trades?.length ? data.trades : showDemo ? demoTrades : [];
   const totalPnl = data?.trades?.length
     ? data.trades.reduce((sum, t) => sum + parseFloat(t.pnlUsd || "0"), 0)
-    : 12.47;
+    : 0;
 
   // Merge server messages with local optimistic messages, deduplicate by content+time
   const serverMessages = data?.messages ?? [];
@@ -492,13 +494,17 @@ export default function DashboardPage() {
             className="bg-surface rounded-md p-6"
           >
             <div className="text-[13px] text-text-muted mb-2">Total P&L</div>
-            <div
-              className={`font-mono text-4xl font-semibold tabular-nums ${
-                totalPnl >= 0 ? "text-success" : "text-danger"
-              }`}
-            >
-              {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
-            </div>
+            {isDeploying(status) ? (
+              <div className="font-mono text-4xl font-semibold tabular-nums text-text-muted animate-pulse">—</div>
+            ) : (
+              <div
+                className={`font-mono text-4xl font-semibold tabular-nums ${
+                  totalPnl >= 0 ? "text-success" : "text-danger"
+                }`}
+              >
+                {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
+              </div>
+            )}
           </motion.div>
 
           {/* Trade Log */}
@@ -510,10 +516,13 @@ export default function DashboardPage() {
           >
             <div className="text-[13px] font-semibold text-text-muted mb-3">
               Recent Trades
-              {!data?.trades?.length && (
-                <span className="ml-2 text-xs font-normal opacity-60">(demo)</span>
-              )}
+              {showDemo && <span className="ml-2 text-xs font-normal opacity-60">(demo)</span>}
             </div>
+            {trades.length === 0 && (
+              <div className="text-sm text-text-muted py-4 text-center">
+                {isDeploying(status) ? "Waiting for agent to start..." : "No trades yet."}
+              </div>
+            )}
             <AnimatePresence initial={false}>
               {trades.map((trade) => (
                 <motion.div
