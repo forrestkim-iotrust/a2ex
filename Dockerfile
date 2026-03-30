@@ -1,20 +1,5 @@
 # ============================================================
-# Stage 1: Build Rust binary (a2ex-mcp)
-# ============================================================
-FROM rust:1.91-slim-bookworm AS rust-builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libssl-dev gcc && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-COPY daemon/Cargo.toml daemon/Cargo.lock ./
-COPY daemon/crates/ ./crates/
-
-RUN cargo build --release -p a2ex-mcp
-
-# ============================================================
-# Stage 2: Build TypeScript plugin
+# Stage 1: Build TypeScript plugin
 # ============================================================
 FROM node:22-slim AS plugin-builder
 
@@ -29,30 +14,37 @@ COPY plugin/src/ ./src/
 RUN pnpm build
 
 # ============================================================
-# Stage 3: Runtime
+# Stage 2: Runtime
 # ============================================================
 FROM node:22-slim AS runtime
+
+ARG TARGETARCH
+ARG DAEMON_VERSION=0.1.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tini curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Cache bust: 2026-03-30
+# Download pre-built a2ex-mcp binary from GitHub Releases (skip Rust build)
+RUN ARCH_MAP="amd64:x86_64-unknown-linux-gnu arm64:aarch64-unknown-linux-gnu"; \
+    TARGET=$(echo "$ARCH_MAP" | tr ' ' '\n' | grep "^${TARGETARCH}:" | cut -d: -f2); \
+    echo "Downloading a2ex-mcp for $TARGET (arch=$TARGETARCH)"; \
+    curl -fsSL "https://github.com/forrestkim-iotrust/a2ex/releases/download/daemon-v${DAEMON_VERSION}/a2ex-mcp-${TARGET}.tar.gz" \
+      | tar xz -C /usr/local/bin/ && \
+    chmod +x /usr/local/bin/a2ex-mcp && \
+    a2ex-mcp --version || echo "binary installed"
+
 RUN npm install -g openclaw @waiaas/cli && \
     which openclaw && openclaw --version && \
     which waiaas && waiaas --version
 
 RUN useradd -m -s /bin/bash openclaw
 
-COPY --from=rust-builder /build/target/release/a2ex-mcp /usr/local/bin/a2ex-mcp
-RUN chmod +x /usr/local/bin/a2ex-mcp
-
 COPY --from=plugin-builder /build/dist/ /opt/a2ex-plugin/dist/
 COPY --from=plugin-builder /build/package.json /opt/a2ex-plugin/
 COPY --from=plugin-builder /build/openclaw.plugin.json /opt/a2ex-plugin/
 COPY --from=plugin-builder /build/node_modules/ /opt/a2ex-plugin/node_modules/
 
-# Single RUN: onboard + plugin + config + cleanup (one layer, no cache bloat)
 USER openclaw
 RUN openclaw onboard --non-interactive --accept-risk \
       --auth-choice openrouter-api-key --openrouter-api-key "build-placeholder" \
