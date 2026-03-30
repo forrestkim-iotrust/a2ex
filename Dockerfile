@@ -34,7 +34,7 @@ RUN ARCH_MAP="amd64:x86_64-unknown-linux-gnu arm64:aarch64-unknown-linux-gnu"; \
     chmod +x /usr/local/bin/a2ex-mcp && \
     a2ex-mcp --version || echo "binary installed"
 
-RUN npm install -g openclaw @waiaas/cli && \
+RUN npm install -g openclaw@2026.3.24 @waiaas/cli && \
     which openclaw && openclaw --version && \
     which waiaas && waiaas --version
 
