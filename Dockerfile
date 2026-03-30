@@ -71,4 +71,4 @@ RUN chmod +x /entrypoint.sh
 USER openclaw
 
 EXPOSE 3100 18789
-ENTRYPOINT ["tini", "--", "/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
