@@ -54,11 +54,12 @@ function truncateAddress(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-function statusColor(status: string, phase?: string, unhealthy?: boolean): string {
+function statusColor(status: string, phase?: string, unhealthy?: boolean, gatewayAlive?: boolean): string {
   if (unhealthy) return "bg-warning";
   switch (status) {
     case "active":
-      return phase === "trading" ? "bg-success" : phase === "ready" ? "bg-success" : "bg-accent";
+      if (phase === "trading" || phase === "ready") return "bg-success";
+      return gatewayAlive ? "bg-success" : "bg-accent";
     case "pending":
     case "sdl_generated":
     case "awaiting_bids":
@@ -73,14 +74,14 @@ function statusColor(status: string, phase?: string, unhealthy?: boolean): strin
   }
 }
 
-function statusLabel(status: string, phase?: string, unhealthy?: boolean): string {
+function statusLabel(status: string, phase?: string, unhealthy?: boolean, gatewayAlive?: boolean): string {
   if (unhealthy) return "Unhealthy";
   if (status === "active") {
     switch (phase) {
       case "bootstrap": return "Creating Wallet...";
       case "ready": return "Agent Ready";
       case "trading": return "Trading";
-      default: return "Initializing...";
+      default: return gatewayAlive ? "Agent Running" : "Initializing...";
     }
   }
   switch (status) {
@@ -319,10 +320,32 @@ export default function DashboardPage() {
     setPrevTradeIds(currentIds);
   }, [data?.trades]);
 
+  // --- Gateway health polling (after active, before heartbeat) ---
+  const [gatewayAlive, setGatewayAlive] = useState(false);
+
+  useEffect(() => {
+    const status = data?.deployment?.status;
+    const config = data?.deployment?.config as Record<string, any> | undefined;
+    const gwUrl = config?._gatewayUrl;
+    if (status !== "active" || !gwUrl || gatewayAlive) return;
+
+    const checkGateway = async () => {
+      try {
+        const res = await fetch(gwUrl, { mode: "no-cors", signal: AbortSignal.timeout(5000) });
+        setGatewayAlive(true);
+      } catch { /* not ready yet */ }
+    };
+
+    checkGateway();
+    const interval = setInterval(checkGateway, 10000);
+    return () => clearInterval(interval);
+  }, [data?.deployment?.status, data?.deployment?.config, gatewayAlive]);
+
   // --- Derived state ---
   const status = data?.deployment?.status ?? "pending";
   const isTerminated = status === "terminated" || status === "failed";
   const config = data?.deployment?.config as Record<string, any> | undefined;
+  const gatewayUrl = config?._gatewayUrl as string | undefined;
   const phase = config?._phase as string | undefined;
   const lastHeartbeat = config?._lastHeartbeat as string | undefined;
   const unhealthy = status === "active" && lastHeartbeat
@@ -384,11 +407,11 @@ export default function DashboardPage() {
             className="flex items-center gap-2 rounded-sm bg-accent-subtle border border-accent/15 px-4 py-3"
           >
             <span
-              className={`w-2 h-2 rounded-full ${statusColor(status, phase, unhealthy)} ${
+              className={`w-2 h-2 rounded-full ${statusColor(status, phase, unhealthy, gatewayAlive)} ${
                 status === "active" && !unhealthy ? "animate-pulse" : ""
               }`}
             />
-            <span className="text-[13px] font-semibold">{statusLabel(status, phase, unhealthy)}</span>
+            <span className="text-[13px] font-semibold">{statusLabel(status, phase, unhealthy, gatewayAlive)}</span>
           </motion.div>
 
           <div>
@@ -413,6 +436,18 @@ export default function DashboardPage() {
                 : "—"}
             </div>
           </div>
+
+          {gatewayUrl && (
+            <div>
+              <div className="text-xs text-text-muted mb-1">Gateway</div>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${gatewayAlive ? "bg-success" : "bg-text-muted"}`} />
+                <span className="font-mono text-xs truncate" title={gatewayUrl}>
+                  {gatewayAlive ? "Connected" : "Starting..."}
+                </span>
+              </div>
+            </div>
+          )}
 
           {unhealthy && (
             <div className="text-xs text-warning">
