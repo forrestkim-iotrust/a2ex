@@ -37,7 +37,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tini curl && \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g openclaw @waiaas/cli
+# Cache bust: 2026-03-30
+RUN npm install -g openclaw @waiaas/cli && \
+    which openclaw && openclaw --version && \
+    which waiaas && waiaas --version
 
 RUN useradd -m -s /bin/bash openclaw
 
