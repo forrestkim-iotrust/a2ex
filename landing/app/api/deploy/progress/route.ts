@@ -3,14 +3,36 @@ import { requireAuth } from "@/lib/auth/middleware";
 import { getDb } from "@/lib/db";
 import { deployments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getAkashBids, createAkashLease, closeAkashDeployment } from "@/lib/akash/client";
+import { getAkashBids, createAkashLease, closeAkashDeployment, getAkashProviders } from "@/lib/akash/client";
 
 export const dynamic = "force-dynamic";
 
-function cheapestOpenBid(bids: any[]) {
+const MIN_UPTIME = 0.99; // 99% uptime over 7 days
+
+async function bestOpenBid(bids: any[]) {
   const open = bids.filter((b: any) => b.bid?.state === "open");
   if (open.length === 0) return null;
-  return open.sort((a: any, b: any) =>
+
+  // Fetch provider uptime data
+  let providerMap: Record<string, number> = {};
+  try {
+    const providers = await getAkashProviders();
+    for (const p of providers) {
+      if (p.owner && p.uptime7d != null) {
+        providerMap[p.owner] = p.uptime7d;
+      }
+    }
+  } catch { /* fallback to no filter */ }
+
+  // Filter by uptime >= 99%, then sort by price
+  const reliable = open.filter((b: any) => {
+    const addr = b.bid?.id?.provider;
+    const uptime = providerMap[addr];
+    return uptime === undefined || uptime >= MIN_UPTIME;
+  });
+
+  const candidates = reliable.length > 0 ? reliable : open; // fallback to all if none pass
+  return candidates.sort((a: any, b: any) =>
     parseFloat(a.bid.price.amount) - parseFloat(b.bid.price.amount)
   )[0];
 }
@@ -53,8 +75,8 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      // Find cheapest open bid
-      const best = cheapestOpenBid(bids);
+      // Find cheapest open bid with 99%+ uptime
+      const best = await bestOpenBid(bids);
 
       if (!best) {
         // Bids exist but none are open — all expired

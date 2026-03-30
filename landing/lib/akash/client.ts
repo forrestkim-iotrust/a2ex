@@ -25,7 +25,12 @@ export async function listAkashDeployments() {
   return akashFetch("/v1/deployments");
 }
 
-export async function createAkashDeployment(sdl: string, depositUsd = 5) {
+export async function getAkashProviders(): Promise<any[]> {
+  const result = await akashFetch("/v1/providers");
+  return Array.isArray(result) ? result : [];
+}
+
+export async function createAkashDeployment(sdl: string, depositUsd = 0.5) {
   return akashFetch("/v1/deployments", {
     method: "POST",
     body: JSON.stringify({ data: { sdl, deposit: depositUsd } }),
