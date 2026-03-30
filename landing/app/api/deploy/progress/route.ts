@@ -83,17 +83,38 @@ export async function GET(req: NextRequest) {
       const config = deployment.config as Record<string, any>;
       const manifest = config?._manifest;
 
-      // Create lease
-      await createAkashLease(deployment.akashDseq, provider, gseq, oseq, manifest);
+      // Create lease — response contains forwarded_ports
+      const leaseResult = await createAkashLease(deployment.akashDseq, provider, gseq, oseq, manifest);
+
+      // Extract forwarded ports from lease response
+      const leaseStatus = leaseResult?.data?.leases?.[0]?.status;
+      const ports = leaseStatus?.forwarded_ports;
+      let gatewayUrl: string | undefined;
+      if (ports) {
+        const svcPorts = Object.values(ports).flat() as any[];
+        const gwPort = svcPorts.find((p: any) => p.port === 18789);
+        if (gwPort) {
+          gatewayUrl = `http://${gwPort.host}:${gwPort.externalPort}`;
+        }
+      }
+
+      // Store provider info + gateway URL in config for dashboard access
+      const updatedConfig = {
+        ...config,
+        _provider: provider,
+        _gatewayUrl: gatewayUrl,
+        _ports: ports,
+      };
 
       await db.update(deployments)
-        .set({ status: "active" })
+        .set({ status: "active", config: updatedConfig })
         .where(eq(deployments.id, deploymentId));
 
       return NextResponse.json({
         status: "active",
         akashDseq: deployment.akashDseq,
         provider,
+        gatewayUrl,
         bidCount: totalBids,
       });
     } catch (error: any) {
