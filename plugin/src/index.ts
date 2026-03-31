@@ -319,13 +319,32 @@ export default function register(api: OpenClawPluginApi): void {
                 if (capturedStateDir) {
                   await encryptAndUploadBackup(capturedStateDir);
                 }
+              } else if (cmd === "SYSTEM:PAUSE") {
+                console.log("[callback] Received PAUSE command — stopping runtime");
+                if (a2exRecoveryHandle) {
+                  try {
+                    const { getMcpCache } = await import("./tools/a2ex-dynamic.js");
+                    const client = getMcpCache()?.client;
+                    if (client) await client.callTool("runtime.stop", {});
+                    callbackClient?.heartbeat("paused").catch(() => {});
+                  } catch (e: any) { console.warn("[pause] Failed:", e.message); }
+                }
+              } else if (cmd === "SYSTEM:RESUME") {
+                console.log("[callback] Received RESUME command — clearing stop");
+                if (a2exRecoveryHandle) {
+                  try {
+                    const { getMcpCache } = await import("./tools/a2ex-dynamic.js");
+                    const client = getMcpCache()?.client;
+                    if (client) await client.callTool("runtime.clear_stop", {});
+                    callbackClient?.heartbeat("trading").catch(() => {});
+                  } catch (e: any) { console.warn("[resume] Failed:", e.message); }
+                }
               } else if (cmd === "SYSTEM:SHUTDOWN") {
                 console.log("[callback] Received SHUTDOWN command");
-                // Backup before shutdown
                 if (capturedStateDir) {
                   await encryptAndUploadBackup(capturedStateDir);
                 }
-              } else if (commands.length > 0) {
+              } else {
                 console.log(`[callback] Received command: ${cmd}`);
               }
             }

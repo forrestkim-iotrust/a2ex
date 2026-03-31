@@ -198,6 +198,8 @@ export default function DashboardPage() {
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isTerminating, setIsTerminating] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [uptime, setUptime] = useState("00:00:00");
   const [fetchError, setFetchError] = useState(false);
   const [bidCount, setBidCount] = useState(0);
@@ -321,10 +323,24 @@ export default function DashboardPage() {
     } catch {}
   };
 
-  // --- Kill Switch (when active) ---
-  const handleKillSwitch = async () => {
+  // --- Pause/Resume Trading ---
+  const handlePauseResume = async () => {
     if (!deploymentId) return;
-    if (!confirm("Are you sure? This will close all positions and return funds.")) return;
+    const command = isPaused ? "SYSTEM:RESUME" : "SYSTEM:PAUSE";
+    try {
+      const res = await fetch("/api/agent/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deploymentId, content: command }),
+      });
+      if (res.ok) setIsPaused(!isPaused);
+    } catch { alert("Network error."); }
+  };
+
+  // --- Stop Agent (full shutdown) ---
+  const handleStopAgent = async () => {
+    if (!deploymentId) return;
+    setShowStopConfirm(false);
     try {
       const res = await fetch("/api/deploy/terminate", {
         method: "POST",
@@ -332,8 +348,8 @@ export default function DashboardPage() {
         body: JSON.stringify({ deploymentId }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Failed to terminate.");
+        const err = await res.json().catch(() => ({})) as Record<string, string>;
+        alert(err.error ?? "Failed to stop.");
         return;
       }
       setIsTerminating(true);
@@ -551,25 +567,55 @@ export default function DashboardPage() {
           )}
           {fetchError && !unhealthy && <div className="text-xs text-text-muted">Reconnecting...</div>}
 
-          {/* Cancel Deploy (during Phase 1) or Kill Switch (when active) */}
+          {/* Controls */}
           {isDeploying(status) ? (
             <button
               onClick={handleCancelDeploy}
               disabled={isTerminating}
               className="mt-auto py-3 text-center bg-border/50 text-text-muted border border-border rounded-sm font-semibold text-sm transition-all hover:bg-border hover:text-text min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Cancel deployment"
             >
               Cancel Deploy
             </button>
+          ) : isTerminated ? (
+            <div className="mt-auto text-center text-sm text-text-muted py-3">Stopped</div>
           ) : (
-            <button
-              onClick={handleKillSwitch}
-              disabled={isTerminating || isTerminated}
-              className="mt-auto py-3 text-center bg-danger/10 text-danger border border-danger/20 rounded-sm font-semibold text-sm transition-all hover:bg-danger/20 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={isTerminated ? "Agent terminated" : "Kill switch — terminate agent"}
-            >
-              {isTerminated ? "Terminated" : isTerminating ? "Shutting down..." : "Kill Switch"}
-            </button>
+            <div className="mt-auto flex flex-col gap-2">
+              <button
+                onClick={handlePauseResume}
+                disabled={isTerminating || !agentReady}
+                className={`py-2.5 text-center rounded-sm font-semibold text-sm transition-all min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isPaused
+                    ? "bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20"
+                    : "bg-warning/10 text-warning border border-warning/20 hover:bg-warning/20"
+                }`}
+              >
+                {isPaused ? "Resume Trading" : "Pause Trading"}
+              </button>
+              {showStopConfirm ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleStopAgent}
+                    className="flex-1 py-2 text-center bg-danger/20 text-danger rounded-sm text-xs font-semibold"
+                  >
+                    Confirm Stop
+                  </button>
+                  <button
+                    onClick={() => setShowStopConfirm(false)}
+                    className="flex-1 py-2 text-center bg-border/50 text-text-muted rounded-sm text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowStopConfirm(true)}
+                  disabled={isTerminating}
+                  className="py-2 text-center text-text-muted text-xs hover:text-danger transition-colors disabled:opacity-50"
+                >
+                  Stop Agent...
+                </button>
+              )}
+            </div>
           )}
 
           {isTerminated && hasBackup && (
