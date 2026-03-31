@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
         }
 
         const chunk = decoder.decode(value, { stream: true });
+        log("chat.chunk", { deploymentId, chunkLength: chunk.length, preview: chunk.slice(0, 200) });
         const lines = chunk.split("\n");
 
         for (const line of lines) {
