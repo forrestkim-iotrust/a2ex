@@ -73,9 +73,11 @@ export async function POST(req: NextRequest) {
 
   if (!upstreamRes.ok || !upstreamRes.body) {
     const errText = await upstreamRes.text().catch(() => "");
-    log("chat.upstream_error", { deploymentId, status: upstreamRes.status, error: errText });
-    return NextResponse.json({ error: "Agent returned error" }, { status: 502 });
+    log("chat.upstream_error", { deploymentId, status: upstreamRes.status, error: errText, headers: Object.fromEntries(upstreamRes.headers.entries()) });
+    return NextResponse.json({ error: "Agent returned error", status: upstreamRes.status, detail: errText }, { status: 502 });
   }
+
+  log("chat.upstream_connected", { deploymentId, status: upstreamRes.status, contentType: upstreamRes.headers.get("content-type") });
 
   // Stream the upstream SSE response through to the browser
   const encoder = new TextEncoder();
