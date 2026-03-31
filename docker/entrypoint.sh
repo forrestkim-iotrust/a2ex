@@ -38,6 +38,20 @@ else
 fi
 
 # ──────────────────────────────────────────────────────────
+# Phase 0.5: Restore from recovery data (if present)
+# Recovery data is an AES-256-GCM encrypted backup from a prior deployment.
+# The plugin will decrypt it using the backup key from callback secrets.
+# Here we just pass it through as an env var for the plugin to handle.
+# ──────────────────────────────────────────────────────────
+if [ -n "$SECRETS" ]; then
+  RECOVERY_DATA=$(echo "$SECRETS" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).recoveryData||'')" 2>/dev/null)
+  if [ -n "$RECOVERY_DATA" ]; then
+    export A2EX_RECOVERY_DATA="$RECOVERY_DATA"
+    echo "[a2ex] Recovery data available (${#RECOVERY_DATA} chars) — plugin will restore"
+  fi
+fi
+
+# ──────────────────────────────────────────────────────────
 # Phase 1: Start WAIaaS
 # ──────────────────────────────────────────────────────────
 echo "[a2ex] Initializing WAIaaS..."

@@ -4,7 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useFirstTradeConfetti } from "@/lib/hooks/useFirstTradeConfetti";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 interface Trade {
   id: string;
@@ -208,6 +210,9 @@ export default function DashboardPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sseRef = useRef<EventSource | null>(null);
+  const router = useRouter();
+  const { authenticate, isAuthenticating } = useAuth();
+  const [isRecovering, setIsRecovering] = useState(false);
 
   // --- Fetch deployment data (one-shot hydration + Phase 2 polling) ---
   const fetchData = useCallback(async () => {
@@ -387,6 +392,7 @@ export default function DashboardPage() {
   const unhealthy = status === "active" && lastHeartbeat
     ? (Date.now() - new Date(lastHeartbeat).getTime()) > 60000
     : false;
+  const hasBackup = !!(data?.deployment as any)?.encryptedBackup;
   const showDemo = status === "active" && gatewayAlive && !data?.trades?.length;
   const trades = data?.trades?.length ? data.trades : [];
   const totalPnl = data?.trades?.length
@@ -398,6 +404,31 @@ export default function DashboardPage() {
   const uniqueLocal = localMessages.filter((m) => !serverContentSet.has(m.content + m.direction));
   const allMessages: Message[] = [...serverMessages, ...uniqueLocal]
     .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+
+  const handleRecover = async () => {
+    if (!deploymentId || isRecovering) return;
+    setIsRecovering(true);
+    try {
+      const authed = await authenticate();
+      if (!authed) { alert("Authentication failed."); return; }
+
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          strategyId: data?.deployment?.strategyId || "sports-basic",
+          config: { fundAmountUsd: 10, riskLevel: "low" },
+          recoveryFromId: deploymentId,
+        }),
+      });
+      const newDep = await res.json();
+      if (newDep.id) {
+        router.push(`/${locale}/dashboard?deploymentId=${newDep.id}`);
+      } else {
+        alert(newDep.error ?? "Recovery failed.");
+      }
+    } catch { alert("Network error."); } finally { setIsRecovering(false); }
+  };
 
   if (!deploymentId) {
     return (
@@ -538,6 +569,16 @@ export default function DashboardPage() {
               aria-label={isTerminated ? "Agent terminated" : "Kill switch — terminate agent"}
             >
               {isTerminated ? "Terminated" : isTerminating ? "Shutting down..." : "Kill Switch"}
+            </button>
+          )}
+
+          {isTerminated && hasBackup && (
+            <button
+              onClick={handleRecover}
+              disabled={isRecovering || isAuthenticating}
+              className="py-3 text-center bg-accent/10 text-accent border border-accent/20 rounded-sm font-semibold text-sm transition-all hover:bg-accent/20 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRecovering ? (isAuthenticating ? "Signing..." : "Recovering...") : "Recover Agent"}
             </button>
           )}
         </aside>

@@ -182,6 +182,7 @@ export async function GET(req: NextRequest) {
       waiaasPassword: config?._waiaasPassword ?? "",
       gatewayToken: config?._gatewayToken ?? "",
       backupKey: config?._backupKey ?? "",
+      recoveryData: config?._recoveryData ?? "",
     });
   }
 

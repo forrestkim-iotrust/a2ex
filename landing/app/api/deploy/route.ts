@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth/middleware";
 import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { deployments } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { createAkashDeployment } from "@/lib/akash/client";
 import { buildSDL } from "@/lib/akash/sdl";
 import { log } from "@/lib/log";
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const { strategyId, config } = await req.json();
+  const { strategyId, config, recoveryFromId } = await req.json();
   const db = getDb();
 
   // Create deployment record
@@ -60,12 +60,33 @@ export async function POST(req: NextRequest) {
 
     if (!dseq) throw new Error("No dseq returned from Akash");
 
+    // If recovering from a previous deployment, carry over its encrypted backup
+    let recoveryBackup: string | undefined;
+    if (recoveryFromId) {
+      const [source] = await db.select({ encryptedBackup: deployments.encryptedBackup })
+        .from(deployments)
+        .where(and(eq(deployments.id, recoveryFromId), eq(deployments.userAddress, auth.userAddress!)));
+      if (source?.encryptedBackup) {
+        recoveryBackup = source.encryptedBackup;
+        log("deploy.recovery", { deploymentId: deployment.id, recoveryFromId });
+      }
+    }
+
     // Store dseq + manifest for later bid acceptance
     await db.update(deployments)
       .set({
         status: "awaiting_bids",
         akashDseq: dseq,
-        config: { ...config, _manifest: manifest, _gatewayToken: gatewayToken, _callbackToken: callbackToken, _openrouterApiKey: process.env.OPENROUTER_API_KEY, _waiaasPassword: waiaasPassword, ...(backupKey ? { _backupKey: backupKey } : {}) },
+        config: {
+          ...config,
+          _manifest: manifest,
+          _gatewayToken: gatewayToken,
+          _callbackToken: callbackToken,
+          _openrouterApiKey: process.env.OPENROUTER_API_KEY,
+          _waiaasPassword: waiaasPassword,
+          ...(backupKey ? { _backupKey: backupKey } : {}),
+          ...(recoveryBackup ? { _recoveryData: recoveryBackup } : {}),
+        },
       })
       .where(eq(deployments.id, deployment.id));
 

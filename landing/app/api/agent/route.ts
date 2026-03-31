@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     .limit(40);
 
   // Strip internal secrets from config before returning
-  const secretKeys = ["_callbackToken", "_gatewayToken", "_manifest", "_openrouterApiKey", "_waiaasPassword", "_backupKey"];
+  const secretKeys = ["_callbackToken", "_gatewayToken", "_manifest", "_openrouterApiKey", "_waiaasPassword", "_backupKey", "_recoveryData"];
   let safeConfig = deployment.config;
   if (safeConfig && typeof safeConfig === "object") {
     const filtered = { ...(safeConfig as Record<string, any>) };

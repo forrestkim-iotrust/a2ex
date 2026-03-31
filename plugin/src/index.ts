@@ -121,6 +121,73 @@ export function __resetForTesting(): void {
 }
 
 /**
+ * Restore WAIaaS data from encrypted recovery backup.
+ * Called once at startup if A2EX_RECOVERY_DATA env var is set.
+ */
+async function restoreFromRecovery(stateDir: string): Promise<boolean> {
+  const recoveryData = process.env.A2EX_RECOVERY_DATA;
+  if (!recoveryData || !backupKey) return false;
+
+  try {
+    const crypto = await import("node:crypto");
+    const { writeFileSync, mkdirSync } = await import("node:fs");
+    const { join: pathJoin, dirname } = await import("node:path");
+
+    const combined = Buffer.from(recoveryData, "base64");
+    if (combined.length < 28) return false; // iv(12) + tag(16) minimum
+
+    const iv = combined.subarray(0, 12);
+    const tag = combined.subarray(12, 28);
+    const ciphertext = combined.subarray(28);
+
+    const keyBuf = Buffer.from(backupKey, "hex").subarray(0, 32);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", keyBuf, iv);
+    decipher.setAuthTag(tag);
+    const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+
+    const bundle: Record<string, string> = JSON.parse(plaintext);
+    const waiaasDir = resolveWaiaasDataDir(stateDir);
+
+    // Restore files
+    let restored = 0;
+    for (const [key, b64data] of Object.entries(bundle)) {
+      if (key === "__plugin_state") continue; // handled separately
+      const filePath = pathJoin(waiaasDir, key);
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, Buffer.from(b64data, "base64"));
+      restored++;
+    }
+
+    // Restore plugin state
+    if (bundle["__plugin_state"]) {
+      const savedState = JSON.parse(bundle["__plugin_state"]);
+      const current = await readState(stateDir);
+      if (current) {
+        await writeState(stateDir, {
+          ...current,
+          masterPassword: savedState.masterPassword,
+          hotWalletId: savedState.hotWalletId,
+          hotAddress: savedState.hotAddress,
+          hotSessionToken: savedState.hotSessionToken,
+          vaultWalletId: savedState.vaultWalletId,
+          vaultAddress: savedState.vaultAddress,
+          vaultSessionToken: savedState.vaultSessionToken,
+          policyIds: savedState.policyIds,
+          waiaasDataDir: waiaasDir,
+        });
+      }
+    }
+
+    console.log(`[recovery] Restored ${restored} files from backup`);
+    delete process.env.A2EX_RECOVERY_DATA;
+    return true;
+  } catch (err: any) {
+    console.error(`[recovery] Failed: ${err.message}`);
+    return false;
+  }
+}
+
+/**
  * Encrypt WAIaaS data directory for backup using AES-256-GCM.
  * Returns base64-encoded encrypted data, or null on failure.
  */
@@ -217,6 +284,14 @@ export default function register(api: OpenClawPluginApi): void {
             backupKey = secrets.backupKey;
           }
           console.log("[callback] Secrets fetched from landing server");
+        }
+
+        // Restore from recovery backup if available
+        if (process.env.A2EX_RECOVERY_DATA && backupKey) {
+          const restored = await restoreFromRecovery(ctx.stateDir);
+          if (restored) {
+            callbackClient.sendMessage("Wallet restored from backup. Resuming operations.").catch(() => {});
+          }
         }
 
         // Send initial heartbeat immediately
