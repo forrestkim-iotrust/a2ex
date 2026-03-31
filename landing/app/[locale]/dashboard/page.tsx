@@ -357,26 +357,86 @@ export default function DashboardPage() {
     } catch { alert("Network error."); }
   };
 
-  // --- Send Chat ---
+  // --- Send Chat (SSE streaming) ---
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+
   const handleSendChat = async () => {
-    if (!deploymentId || !chatInput.trim()) return;
+    if (!deploymentId || !chatInput.trim() || isStreaming) return;
     const content = chatInput.trim();
-    const optimistic: Message = { id: `local-${Date.now()}`, content, direction: "user_to_agent", ts: new Date().toISOString() };
-    setLocalMessages((prev) => [...prev, optimistic]);
+    const userMsg: Message = { id: `local-${Date.now()}`, content, direction: "user_to_agent", ts: new Date().toISOString() };
+    setLocalMessages((prev) => [...prev, userMsg]);
     setChatInput("");
+    setIsStreaming(true);
+    setStreamingText("");
+
+    // Create placeholder for agent response
+    const agentMsgId = `stream-${Date.now()}`;
+
     try {
-      const res = await fetch("/api/agent/command", {
+      const res = await fetch("/api/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deploymentId, content }),
       });
-      if (!res.ok) {
-        alert("Failed to send message.");
-        setLocalMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+
+      if (!res.ok || !res.body) {
+        // Fallback to old command API
+        await fetch("/api/agent/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deploymentId, content }),
+        });
+        setIsStreaming(false);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.token) {
+                fullText += data.token;
+                setStreamingText(fullText);
+              }
+              if (data.fullText !== undefined) {
+                fullText = data.fullText || fullText;
+              }
+            } catch {}
+          }
+        }
+      }
+
+      // Add final agent message
+      if (fullText) {
+        setLocalMessages((prev) => [...prev, {
+          id: agentMsgId,
+          content: fullText,
+          direction: "agent_to_user",
+          ts: new Date().toISOString(),
+        }]);
       }
     } catch {
-      alert("Network error.");
-      setLocalMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      // Fallback to command API on error
+      await fetch("/api/agent/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deploymentId, content }),
+      }).catch(() => {});
+    } finally {
+      setIsStreaming(false);
+      setStreamingText("");
     }
   };
 
@@ -716,6 +776,13 @@ export default function DashboardPage() {
                   })}
                 </AnimatePresence>
               )}
+              {isStreaming && streamingText && (
+                <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                  <div className="max-w-[85%] sm:max-w-[75%] px-3 py-2 rounded-md text-sm bg-bg border border-border">
+                    <div>{streamingText}<span className="animate-pulse">▊</span></div>
+                  </div>
+                </motion.div>
+              )}
               <div ref={chatEndRef} />
             </div>
             <div className="flex gap-2">
@@ -730,12 +797,12 @@ export default function DashboardPage() {
                   isTerminated ? "Agent is terminated" : (isDeploying(status) || !agentReady) ? "Agent is starting up..." : "Ask your agent anything..."
                 }
                 maxLength={500}
-                disabled={isTerminated || isDeploying(status) || !agentReady}
+                disabled={isTerminated || isDeploying(status) || !agentReady || isStreaming}
                 className="flex-1 px-3.5 py-2.5 bg-bg border border-border rounded-sm text-sm outline-none focus:border-accent transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSendChat}
-                disabled={isTerminated || isDeploying(status) || !agentReady || !chatInput.trim()}
+                disabled={isTerminated || isDeploying(status) || !agentReady || !chatInput.trim() || isStreaming}
                 className="px-4 sm:px-5 py-2.5 bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send message"
               >
