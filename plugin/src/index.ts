@@ -18,6 +18,7 @@ import {
 import { readState, writeState } from "./state/plugin-state.js";
 import type { A2exPluginState } from "./state/plugin-state.js";
 import { createCallbackClient, type CallbackClient } from "./transport/callback-client.js";
+import { createGatewayWsClient, type GatewayWsClient } from "./transport/gateway-ws-client.js";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
@@ -96,6 +97,7 @@ let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let commandPollInterval: ReturnType<typeof setInterval> | null = null;
 let backupKey: string | null = null;
 let lastBackupHash: string | null = null;
+let gatewayWs: GatewayWsClient | null = null;
 
 /** Thunk for dependency injection into the tool factory. */
 const getStateDir = (): string | null => capturedStateDir;
@@ -117,6 +119,8 @@ export function __resetForTesting(): void {
   callbackClient = null;
   backupKey = null;
   lastBackupHash = null;
+  gatewayWs?.close();
+  gatewayWs = null;
   clearMcpCache();
 }
 
@@ -294,6 +298,17 @@ export default function register(api: OpenClawPluginApi): void {
           }
         }
 
+        // Connect to OpenClaw gateway WebSocket for chat routing
+        if (secrets?.gatewayToken) {
+          const gwPort = 18789;
+          gatewayWs = await createGatewayWsClient(gwPort, secrets.gatewayToken);
+          if (gatewayWs) {
+            console.log("[gateway] WebSocket connected for chat routing");
+          } else {
+            console.warn("[gateway] WebSocket connection failed — chat routing unavailable");
+          }
+        }
+
         // Send initial heartbeat immediately
         callbackClient.heartbeat("bootstrap").catch(() => {});
 
@@ -345,7 +360,16 @@ export default function register(api: OpenClawPluginApi): void {
                   await encryptAndUploadBackup(capturedStateDir);
                 }
               } else {
-                console.log(`[callback] Received command: ${cmd}`);
+                // Route user chat messages to OpenClaw agent via gateway WS
+                console.log(`[callback] Routing user message to agent: ${cmd.slice(0, 50)}`);
+                if (gatewayWs) {
+                  const result = await gatewayWs.sendSessionMessage(cmd);
+                  if (result) {
+                    console.log(`[callback] Agent session accepted message (runId: ${result})`);
+                  }
+                } else {
+                  console.warn("[callback] Gateway WS not connected — message not routed");
+                }
               }
             }
           }
@@ -423,6 +447,8 @@ export default function register(api: OpenClawPluginApi): void {
       if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
       if (commandPollInterval) { clearInterval(commandPollInterval); commandPollInterval = null; }
       callbackClient = null;
+      gatewayWs?.close();
+      gatewayWs = null;
 
       // Tear down WAIaaS healthcheck interval
       healthcheckHandle?.stop();
