@@ -78,16 +78,17 @@ if [ -n "${OPENROUTER_API_KEY:-}" ]; then
   mkdir -p ~/.openclaw/agents/main/agent
   cat > ~/.openclaw/agents/main/agent/auth-profiles.json <<EOF
 {
-  "openrouter:default": {
-    "provider": "openrouter",
-    "token": "${OPENROUTER_API_KEY}",
-    "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  "version": 1,
+  "profiles": {
+    "openrouter:default": {
+      "type": "api_key",
+      "provider": "openrouter",
+      "key": "${OPENROUTER_API_KEY}"
+    }
   }
 }
 EOF
-  # Also set env in OpenClaw config (some versions read from here)
-  openclaw config set env.OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" 2>/dev/null || true
-  echo "[a2ex] API key injected"
+  echo "[a2ex] API key injected (${OPENROUTER_API_KEY:0:10}...)"
 fi
 
 # Set gateway token at runtime
