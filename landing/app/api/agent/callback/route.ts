@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { deployments, trades, agentMessages } from "@/lib/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { getRedis } from "@/lib/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
 export const dynamic = "force-dynamic";
+
+// Rate limit: 10 requests per second per deployment
+let ratelimit: Ratelimit | null = null;
+function getRatelimit(): Ratelimit {
+  if (!ratelimit) {
+    ratelimit = new Ratelimit({
+      redis: getRedis(),
+      limiter: Ratelimit.slidingWindow(10, "1 s"),
+      prefix: "cb",
+    });
+  }
+  return ratelimit;
+}
 
 async function authenticateCallback(req: NextRequest, deploymentId: string) {
   const authHeader = req.headers.get("authorization");
@@ -24,6 +39,14 @@ async function authenticateCallback(req: NextRequest, deploymentId: string) {
   return deployment;
 }
 
+// Publish event to Redis for realtime subscribers
+async function publishEvent(deploymentId: string, type: string, data: Record<string, any>) {
+  try {
+    const redis = getRedis();
+    await redis.publish(`deploy:${deploymentId}`, JSON.stringify({ type, ...data, ts: Date.now() }));
+  } catch { /* non-blocking — DB write already succeeded */ }
+}
+
 // POST — Agent reports trade, heartbeat, or message
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -32,6 +55,14 @@ export async function POST(req: NextRequest) {
   if (!deploymentId || !type) {
     return NextResponse.json({ error: "deploymentId and type required" }, { status: 400 });
   }
+
+  // Rate limit check
+  try {
+    const { success } = await getRatelimit().limit(deploymentId);
+    if (!success) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
+  } catch { /* if rate limit fails, allow through */ }
 
   const deployment = await authenticateCallback(req, deploymentId);
   if (!deployment) {
@@ -43,19 +74,19 @@ export async function POST(req: NextRequest) {
   switch (type) {
     case "trade": {
       const { venue, action, amountUsd, pnlUsd } = payload;
-      await db.insert(trades).values({
+      const [trade] = await db.insert(trades).values({
         deploymentId,
         venue: venue ?? "unknown",
         action: action ?? "unknown",
         amountUsd: amountUsd?.toString() ?? "0",
         pnlUsd: pnlUsd?.toString() ?? "0",
-      });
+      }).returning();
+      await publishEvent(deploymentId, "trade", trade);
       return NextResponse.json({ ok: true });
     }
 
     case "heartbeat": {
-      const { phase } = payload; // "bootstrap" | "ready" | "trading"
-      // Store last heartbeat in deployment config
+      const { phase } = payload;
       const config = deployment.config as Record<string, any>;
       await db.update(deployments)
         .set({
@@ -66,6 +97,7 @@ export async function POST(req: NextRequest) {
           },
         })
         .where(eq(deployments.id, deploymentId));
+      await publishEvent(deploymentId, "heartbeat", { phase: phase ?? "active" });
       return NextResponse.json({ ok: true });
     }
 
@@ -74,11 +106,12 @@ export async function POST(req: NextRequest) {
       if (!content) {
         return NextResponse.json({ error: "content required" }, { status: 400 });
       }
-      await db.insert(agentMessages).values({
+      const [msg] = await db.insert(agentMessages).values({
         deploymentId,
         direction: "agent_to_user",
         content,
-      });
+      }).returning();
+      await publishEvent(deploymentId, "message", msg);
       return NextResponse.json({ ok: true });
     }
 
@@ -101,7 +134,6 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
 
-  // Get unprocessed user→agent messages
   const pending = await db.select().from(agentMessages)
     .where(
       and(
@@ -113,7 +145,6 @@ export async function GET(req: NextRequest) {
     .orderBy(asc(agentMessages.ts))
     .limit(10);
 
-  // Mark as processed
   if (pending.length > 0) {
     const ids = pending.map((m) => m.id);
     for (const id of ids) {
