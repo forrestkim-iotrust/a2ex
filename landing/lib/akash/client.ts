@@ -60,3 +60,29 @@ export async function createAkashLease(
     }),
   });
 }
+
+const MIN_UPTIME = 0.99;
+
+export async function bestOpenBid(bids: any[]): Promise<any | null> {
+  const open = bids.filter((b: any) => b.bid?.state === "open");
+  if (open.length === 0) return null;
+
+  let providerMap: Record<string, number> = {};
+  try {
+    const providers = await getAkashProviders();
+    for (const p of providers) {
+      if (p.owner && p.uptime7d != null) providerMap[p.owner] = p.uptime7d;
+    }
+  } catch { /* fallback to no filter */ }
+
+  const reliable = open.filter((b: any) => {
+    const addr = b.bid?.id?.provider;
+    const uptime = providerMap[addr];
+    return uptime === undefined || uptime >= MIN_UPTIME;
+  });
+
+  const candidates = reliable.length > 0 ? reliable : open;
+  return candidates.sort((a: any, b: any) =>
+    parseFloat(a.bid.price.amount) - parseFloat(b.bid.price.amount)
+  )[0];
+}
