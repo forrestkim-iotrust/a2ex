@@ -11,6 +11,7 @@ import { log } from "@/lib/log";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  try {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
       status: "awaiting_bids",
     });
   } catch (error: any) {
-    log("deploy.failed", { deploymentId: deployment.id, error: error.message });
+    log("deploy.failed", { deploymentId: deployment.id, error: error.message, stack: error.stack });
 
     await db.update(deployments)
       .set({ status: "failed" })
@@ -88,6 +89,9 @@ export async function POST(req: NextRequest) {
       error: error.message,
       status: "failed",
     });
+  }
+  } catch (outerError: any) {
+    return NextResponse.json({ error: outerError.message, stack: outerError.stack }, { status: 500 });
   }
 }
 
