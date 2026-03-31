@@ -19,6 +19,7 @@ import { readState, writeState } from "./state/plugin-state.js";
 import type { A2exPluginState } from "./state/plugin-state.js";
 import { createCallbackClient, type CallbackClient } from "./transport/callback-client.js";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 
 // ---------------------------------------------------------------------------
 // Credential forwarding — build env for a2ex subprocess
@@ -93,6 +94,8 @@ let a2exRecoveryHandle: { stop: () => void; start: () => Promise<void> } | null 
 let callbackClient: CallbackClient | null = null;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let commandPollInterval: ReturnType<typeof setInterval> | null = null;
+let backupKey: string | null = null;
+let lastBackupHash: string | null = null;
 
 /** Thunk for dependency injection into the tool factory. */
 const getStateDir = (): string | null => capturedStateDir;
@@ -112,7 +115,74 @@ export function __resetForTesting(): void {
   if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
   if (commandPollInterval) { clearInterval(commandPollInterval); commandPollInterval = null; }
   callbackClient = null;
+  backupKey = null;
+  lastBackupHash = null;
   clearMcpCache();
+}
+
+/**
+ * Encrypt WAIaaS data directory for backup using AES-256-GCM.
+ * Returns base64-encoded encrypted data, or null on failure.
+ */
+async function encryptAndUploadBackup(stateDir: string): Promise<boolean> {
+  if (!callbackClient?.enabled || !backupKey) return false;
+
+  try {
+    const { readFileSync, readdirSync, statSync } = await import("node:fs");
+    const { join: pathJoin } = await import("node:path");
+    const crypto = await import("node:crypto");
+
+    const waiaasDir = resolveWaiaasDataDir(stateDir);
+
+    // Collect WAIaaS data files into a JSON bundle
+    const bundle: Record<string, string> = {};
+    function collectFiles(dir: string, prefix: string) {
+      try {
+        for (const entry of readdirSync(dir)) {
+          const full = pathJoin(dir, entry);
+          const key = prefix ? `${prefix}/${entry}` : entry;
+          const stat = statSync(full);
+          if (stat.isDirectory()) {
+            collectFiles(full, key);
+          } else if (stat.size < 1_000_000) {
+            bundle[key] = readFileSync(full).toString("base64");
+          }
+        }
+      } catch { /* dir may not exist yet */ }
+    }
+    collectFiles(waiaasDir, "");
+
+    // Also include plugin state
+    const state = await readState(stateDir);
+    if (state) {
+      bundle["__plugin_state"] = JSON.stringify(state);
+    }
+
+    const plaintext = JSON.stringify(bundle);
+
+    // Check if data changed since last backup
+    const hash = createHash("sha256").update(plaintext).digest("hex");
+    if (hash === lastBackupHash) return true; // no change
+
+    // AES-256-GCM encrypt
+    const keyBuf = Buffer.from(backupKey, "hex").subarray(0, 32);
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", keyBuf, iv);
+    const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+    const tag = cipher.getAuthTag();
+
+    // Format: iv(12) + tag(16) + ciphertext, base64 encoded
+    const combined = Buffer.concat([iv, tag, encrypted]);
+    const encryptedData = combined.toString("base64");
+
+    await callbackClient.reportBackup(encryptedData);
+    lastBackupHash = hash;
+    console.log(`[backup] Uploaded encrypted backup (${Math.round(encryptedData.length / 1024)}KB)`);
+    return true;
+  } catch (err: any) {
+    console.warn(`[backup] Failed: ${err.message}`);
+    return false;
+  }
 }
 
 /**
@@ -134,24 +204,55 @@ export default function register(api: OpenClawPluginApi): void {
       // Initialize callback client (reads CALLBACK_URL/TOKEN/DEPLOYMENT_ID env vars)
       callbackClient = createCallbackClient();
       if (callbackClient.enabled) {
+        // Fetch secrets from landing server (API keys, passwords, backup key)
+        const secrets = await callbackClient.fetchSecrets();
+        if (secrets) {
+          if (secrets.waiaasPassword) {
+            process.env.WAIAAS_MASTER_PASSWORD = secrets.waiaasPassword;
+          }
+          if (secrets.openrouterApiKey) {
+            process.env.OPENROUTER_API_KEY = secrets.openrouterApiKey;
+          }
+          if (secrets.backupKey) {
+            backupKey = secrets.backupKey;
+          }
+          console.log("[callback] Secrets fetched from landing server");
+        }
+
         // Send initial heartbeat immediately
         callbackClient.heartbeat("bootstrap").catch(() => {});
 
-        // Periodic heartbeat every 30s
-        heartbeatInterval = setInterval(() => {
+        // Periodic heartbeat every 30s + backup attempt
+        heartbeatInterval = setInterval(async () => {
           if (!isStopping && callbackClient?.enabled) {
             callbackClient.heartbeat(a2exRecoveryHandle ? "trading" : "ready").catch(() => {});
+
+            // Attempt backup on each heartbeat (skips if data unchanged)
+            if (capturedStateDir) {
+              encryptAndUploadBackup(capturedStateDir).catch(() => {});
+            }
           }
         }, 30_000);
 
         // Poll for user commands every 5s
         commandPollInterval = setInterval(async () => {
           if (!isStopping && callbackClient?.enabled) {
-            // Commands are polled but not yet routed to OpenClaw conversation.
-            // This is a placeholder for Phase 2 command routing.
             const commands = await callbackClient.pollCommands();
-            if (commands.length > 0) {
-              console.log(`[callback] Received ${commands.length} commands (routing not yet implemented)`);
+            for (const cmd of commands) {
+              if (cmd === "SYSTEM:BACKUP_NOW") {
+                console.log("[callback] Received BACKUP_NOW command");
+                if (capturedStateDir) {
+                  await encryptAndUploadBackup(capturedStateDir);
+                }
+              } else if (cmd === "SYSTEM:SHUTDOWN") {
+                console.log("[callback] Received SHUTDOWN command");
+                // Backup before shutdown
+                if (capturedStateDir) {
+                  await encryptAndUploadBackup(capturedStateDir);
+                }
+              } else if (commands.length > 0) {
+                console.log(`[callback] Received command: ${cmd}`);
+              }
             }
           }
         }, 5_000);

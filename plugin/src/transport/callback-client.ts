@@ -18,6 +18,13 @@ export interface CallbackConfig {
   deploymentId: string;
 }
 
+export interface SecretsResponse {
+  openrouterApiKey: string;
+  waiaasPassword: string;
+  gatewayToken: string;
+  backupKey: string;
+}
+
 export interface CallbackClient {
   /** Send heartbeat with phase (bootstrap, ready, trading) */
   heartbeat(phase: string): Promise<void>;
@@ -27,6 +34,12 @@ export interface CallbackClient {
   sendMessage(content: string): Promise<void>;
   /** Poll for pending user commands, returns array of command strings */
   pollCommands(): Promise<string[]>;
+  /** Fetch secrets (API keys, passwords, backup key) from landing server */
+  fetchSecrets(): Promise<SecretsResponse | null>;
+  /** Report encrypted WAIaaS backup data */
+  reportBackup(encryptedData: string): Promise<void>;
+  /** Report USDC wallet balance */
+  reportBalance(usdcBalance: string): Promise<void>;
   /** Whether callback is configured (env vars present) */
   readonly enabled: boolean;
 }
@@ -55,6 +68,9 @@ function createNoopClient(): CallbackClient {
     async reportTrade() {},
     async sendMessage() {},
     async pollCommands() { return []; },
+    async fetchSecrets() { return null; },
+    async reportBackup() {},
+    async reportBalance() {},
   };
 }
 
@@ -129,6 +145,28 @@ function createHttpClient(config: CallbackConfig): CallbackClient {
       } catch {
         return [];
       }
+    },
+
+    async fetchSecrets(): Promise<SecretsResponse | null> {
+      try {
+        const url = `${callbackUrl}?deploymentId=${deploymentId}&type=secrets`;
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${callbackToken}` },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
+    },
+
+    async reportBackup(encryptedData: string) {
+      await post("backup", { encryptedData });
+    },
+
+    async reportBalance(usdcBalance: string) {
+      await post("balance_update", { usdcBalance });
     },
   };
 }
