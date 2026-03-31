@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useAccount, useSignMessage } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { SiweMessage } from "siwe";
 
 const BACKUP_MESSAGE = "a2ex backup key\n\nSigning creates your encrypted backup key.\nNo transaction will be sent.";
 
 export function useAuth() {
   const { address, chainId } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const authenticate = useCallback(async (): Promise<boolean> => {
-    if (!address) return false;
+    if (!address || !walletClient) return false;
     setIsAuthenticating(true);
 
     try {
@@ -22,6 +22,7 @@ export function useAuth() {
       const { nonce } = await nonceRes.json();
 
       // Step 2: Create & sign SIWE message
+      // Uses walletClient.signMessage directly (no wagmi transport timeout)
       const siweMessage = new SiweMessage({
         domain: window.location.hostname,
         address,
@@ -34,7 +35,7 @@ export function useAuth() {
       });
 
       const message = siweMessage.prepareMessage();
-      const signature = await signMessageAsync({ message });
+      const signature = await walletClient.signMessage({ message, account: address });
 
       // Step 3: Verify with server
       const verifyRes = await fetch("/api/auth/siwe", {
@@ -46,7 +47,7 @@ export function useAuth() {
 
       // Step 4: Sign backup key (optional — auth succeeds even if this fails)
       try {
-        const backupSig = await signMessageAsync({ message: BACKUP_MESSAGE });
+        const backupSig = await walletClient.signMessage({ message: BACKUP_MESSAGE, account: address });
         const encoder = new TextEncoder();
         const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(backupSig));
         const backupKey = Array.from(new Uint8Array(hashBuffer))
@@ -68,7 +69,7 @@ export function useAuth() {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, chainId, signMessageAsync]);
+  }, [address, chainId, walletClient]);
 
   return { authenticate, isAuthenticating };
 }
