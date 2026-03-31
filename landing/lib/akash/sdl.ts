@@ -15,7 +15,7 @@ export function buildSDL(config: DeployConfig): string {
     version: "2.0",
     services: {
       "a2ex-agent": {
-        image: "ghcr.io/forrestkim-iotrust/a2ex:sha-2e2bfbb",
+        image: "ghcr.io/forrestkim-iotrust/a2ex:sha-bb3f3e7",
         env: [
           `STRATEGY_ID=${sanitize(config.strategyId)}`,
           `FUND_LIMIT_USD=${Math.min(Math.max(config.fundAmountUsd, 10), 1000)}`,

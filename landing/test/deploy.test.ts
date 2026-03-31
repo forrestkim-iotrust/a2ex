@@ -33,7 +33,7 @@ describe("SDL Generation", () => {
 
   it("includes the correct image tag", () => {
     const sdl = buildSDL(makeConfig());
-    expect(sdl).toContain("ghcr.io/forrestkim-iotrust/a2ex:sha-2e2bfbb");
+    expect(sdl).toContain("ghcr.io/forrestkim-iotrust/a2ex:sha-bb3f3e7");
   });
 
   it("includes port 18789 (gateway)", () => {
