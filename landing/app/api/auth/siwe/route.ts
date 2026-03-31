@@ -20,7 +20,11 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
 
   const siweMessage = new SiweMessage(message);
-  const { data: verified } = await siweMessage.verify({ signature, nonce: session.nonce });
+  const { data: verified } = await siweMessage.verify({
+    signature,
+    nonce: session.nonce,
+    domain: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://a2ex.xyz').hostname,
+  });
 
   // Check nonce hasn't been used
   const db = getDb();

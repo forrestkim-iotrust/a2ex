@@ -32,5 +32,13 @@ export async function GET(req: NextRequest) {
     .orderBy(desc(agentMessages.ts))
     .limit(40);
 
-  return NextResponse.json({ deployment, trades: recentTrades, messages });
+  // Filter sensitive config fields
+  const safeConfig = deployment.config ? Object.fromEntries(
+    Object.entries(deployment.config as Record<string, unknown>).filter(
+      ([key]) => !['_callbackToken', '_gatewayToken', '_manifest'].includes(key)
+    )
+  ) : {};
+  const safeDeployment = { ...deployment, config: safeConfig };
+
+  return NextResponse.json({ deployment: safeDeployment, trades: recentTrades, messages });
 }

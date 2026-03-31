@@ -360,7 +360,14 @@ export default function DashboardPage() {
   };
 
   // --- Confetti + trade flash ---
-  useFirstTradeConfetti(data?.trades ?? []);
+  const firstTradeFired = useFirstTradeConfetti(data?.trades ?? []);
+  const [showShareButton, setShowShareButton] = useState(false);
+  useEffect(() => {
+    if (!firstTradeFired) return;
+    setShowShareButton(true);
+    const timer = setTimeout(() => setShowShareButton(false), 10000);
+    return () => clearTimeout(timer);
+  }, [firstTradeFired]);
   useEffect(() => {
     if (!data?.trades?.length) return;
     const currentIds = new Set(data.trades.map((t) => t.id));
@@ -542,6 +549,22 @@ export default function DashboardPage() {
                 {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
               </div>
             )}
+            <AnimatePresence>
+              {(showShareButton || firstTradeFired) && (
+                <motion.a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("My AI agent just made its first trade on Polymarket via @a2ex_xyz 🤖")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: showShareButton ? 1 : 0.6 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-accent text-bg text-sm font-semibold rounded-sm hover:bg-accent-hover transition-colors"
+                >
+                  Share on Twitter
+                </motion.a>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Trade Log */}

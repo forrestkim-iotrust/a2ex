@@ -1,15 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface Trade {
   id: string;
 }
 
-export function useFirstTradeConfetti(trades: Trade[]) {
+export function useFirstTradeConfetti(trades: Trade[]): boolean {
   const initialIdsRef = useRef<Set<string> | null>(null);
   const firedRef = useRef(false);
+  const [fired, setFired] = useState(false);
 
   useEffect(() => {
-    // Record the initial set of trade IDs on first render
     if (initialIdsRef.current === null) {
       initialIdsRef.current = new Set(trades.map((t) => t.id));
       return;
@@ -20,6 +20,7 @@ export function useFirstTradeConfetti(trades: Trade[]) {
     const hasNewTrade = trades.some((t) => !initialIdsRef.current!.has(t.id));
     if (hasNewTrade) {
       firedRef.current = true;
+      setFired(true);
       import("canvas-confetti").then((mod) => {
         const confetti = mod.default;
         confetti({
@@ -30,4 +31,6 @@ export function useFirstTradeConfetti(trades: Trade[]) {
       });
     }
   }, [trades]);
+
+  return fired;
 }

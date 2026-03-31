@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth/middleware";
 import { getDb } from "@/lib/db";
 import { deployments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getAkashBids, createAkashLease, closeAkashDeployment, bestOpenBid } from "@/lib/akash/client";
+import { getAkashBids, createAkashLease, closeAkashDeployment, bestOpenBid, getAkashProviders } from "@/lib/akash/client";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -91,6 +91,14 @@ export async function GET(req: NextRequest) {
           let totalBids = 0;
           const startTime = Date.now();
 
+          let providerMap: Record<string, number> = {};
+          try {
+            const providers = await getAkashProviders();
+            for (const p of providers) {
+              if (p.owner && p.uptime7d != null) providerMap[p.owner] = p.uptime7d;
+            }
+          } catch {}
+
           while (!best && !closed && Date.now() - startTime < BID_TIMEOUT) {
             const result = await getAkashBids(deployment.akashDseq!);
             const bids = result?.data ?? [];
@@ -99,7 +107,7 @@ export async function GET(req: NextRequest) {
             if (!send("bids", { bidCount: totalBids, elapsed: Date.now() - startTime })) break;
 
             if (totalBids > 0) {
-              best = await bestOpenBid(bids);
+              best = await bestOpenBid(bids, providerMap);
               if (best) break;
 
               const hasOpen = bids.some((b: any) => b.bid?.state === "open");

@@ -63,17 +63,19 @@ export async function createAkashLease(
 
 const MIN_UPTIME = 0.99;
 
-export async function bestOpenBid(bids: any[]): Promise<any | null> {
+export async function bestOpenBid(bids: any[], cachedProviderMap?: Record<string, number>): Promise<any | null> {
   const open = bids.filter((b: any) => b.bid?.state === "open");
   if (open.length === 0) return null;
 
-  let providerMap: Record<string, number> = {};
-  try {
-    const providers = await getAkashProviders();
-    for (const p of providers) {
-      if (p.owner && p.uptime7d != null) providerMap[p.owner] = p.uptime7d;
-    }
-  } catch { /* fallback to no filter */ }
+  let providerMap: Record<string, number> = cachedProviderMap ?? {};
+  if (!cachedProviderMap) {
+    try {
+      const providers = await getAkashProviders();
+      for (const p of providers) {
+        if (p.owner && p.uptime7d != null) providerMap[p.owner] = p.uptime7d;
+      }
+    } catch { /* fallback to no filter */ }
+  }
 
   const reliable = open.filter((b: any) => {
     const addr = b.bid?.id?.provider;

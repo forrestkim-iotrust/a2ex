@@ -1,3 +1,5 @@
+import yaml from "js-yaml";
+
 export interface DeployConfig {
   strategyId: string;
   fundAmountUsd: number;
@@ -29,7 +31,6 @@ export function buildSDL(config: DeployConfig): string {
           `CALLBACK_TOKEN=${config.callbackToken}`,
         ],
         expose: [
-          { port: 3100, as: 3100, to: [{ global: true }] },
           { port: 18789, as: 18789, to: [{ global: true }] },
         ],
       },
@@ -59,40 +60,9 @@ export function buildSDL(config: DeployConfig): string {
     },
   };
 
-  return yamlStringify(sdl);
+  return yaml.dump(sdl);
 }
 
 function sanitize(input: string): string {
   return input.replace(/[^a-zA-Z0-9_-]/g, "");
-}
-
-function yamlStringify(obj: unknown, indent = 0): string {
-  const pad = "  ".repeat(indent);
-  if (obj === null || obj === undefined) return "null";
-  if (typeof obj === "string") return `"${obj}"`;
-  if (typeof obj === "number" || typeof obj === "boolean") return String(obj);
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return "[]";
-    return obj.map(item => {
-      if (typeof item === "object" && item !== null) {
-        const lines = yamlStringify(item, indent + 1).split("\n");
-        return `${pad}- ${lines[0].trim()}\n${lines.slice(1).join("\n")}`;
-      }
-      return `${pad}- ${yamlStringify(item)}`;
-    }).join("\n");
-  }
-  if (typeof obj === "object") {
-    return Object.entries(obj as Record<string, unknown>)
-      .map(([key, val]) => {
-        if (typeof val === "object" && val !== null && !Array.isArray(val)) {
-          return `${pad}${key}:\n${yamlStringify(val, indent + 1)}`;
-        }
-        if (Array.isArray(val)) {
-          return `${pad}${key}:\n${yamlStringify(val, indent + 1)}`;
-        }
-        return `${pad}${key}: ${yamlStringify(val)}`;
-      })
-      .join("\n");
-  }
-  return String(obj);
 }

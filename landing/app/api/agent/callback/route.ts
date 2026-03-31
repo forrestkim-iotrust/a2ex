@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { deployments, trades, agentMessages } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { getRedis } from "@/lib/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 
@@ -147,11 +147,9 @@ export async function GET(req: NextRequest) {
 
   if (pending.length > 0) {
     const ids = pending.map((m) => m.id);
-    for (const id of ids) {
-      await db.update(agentMessages)
-        .set({ processed: true })
-        .where(eq(agentMessages.id, id));
-    }
+    await db.update(agentMessages)
+      .set({ processed: true })
+      .where(inArray(agentMessages.id, ids));
   }
 
   return NextResponse.json({ commands: pending });
