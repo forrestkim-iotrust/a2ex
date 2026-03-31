@@ -5,6 +5,7 @@
  */
 import { privateKeyToAccount } from "viem/accounts";
 import { SiweMessage } from "siwe";
+import { createHash } from "node:crypto";
 
 const PRIVATE_KEY = (process.env.PRIVATE_KEY || "0x492a11a942c5b403a5e53203501d78f6f13d7c5df9588ff139406b6d8b03c56c") as `0x${string}`;
 const BASE_URL = process.env.BASE_URL || "https://landing-two-silk-25.vercel.app";
@@ -71,6 +72,24 @@ async function step1_siweAuth(): Promise<boolean> {
   log(`  Cookie after verify: ${sessionCookie.slice(0, 40)}...`);
   const result = await verifyRes.json();
   log(`  Authenticated: ${result.address}`);
+
+  // Sign backup key message
+  const backupSig = await account.signMessage({
+    message: "a2ex backup key\n\nSigning creates your encrypted backup key.\nNo transaction will be sent.",
+  });
+  const backupKey = createHash("sha256").update(backupSig).digest("hex");
+  log(`  Backup key derived (${backupKey.slice(0, 16)}...)`);
+
+  // Store backup key in session
+  const putRes = await fetch(`${BASE_URL}/api/auth/siwe`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", cookie: sessionCookie },
+    body: JSON.stringify({ backupKey }),
+  });
+  const putCookie = extractCookie(putRes);
+  if (putCookie) sessionCookie = putCookie;
+  log(`  Backup key stored: ${putRes.ok}`);
+
   return true;
 }
 

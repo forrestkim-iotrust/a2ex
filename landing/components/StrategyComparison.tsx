@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 interface Strategy {
   id: string;
@@ -63,6 +64,7 @@ function Sparkline({ data }: { data: number[] }) {
 export default function StrategyComparison({ onSelect }: { onSelect?: (id: string) => void }) {
   const { isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { authenticate, isAuthenticating } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [deploying, setDeploying] = useState<string | null>(null);
@@ -82,6 +84,13 @@ export default function StrategyComparison({ onSelect }: { onSelect?: (id: strin
 
     setDeploying(strategyId);
     try {
+      // Authenticate (SIWE + backup key) before deploying
+      const authed = await authenticate();
+      if (!authed) {
+        alert("Authentication failed. Please try again.");
+        return;
+      }
+
       const res = await fetch("/api/deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,7 +135,7 @@ export default function StrategyComparison({ onSelect }: { onSelect?: (id: strin
             disabled={deploying === s.id}
             className="mt-auto py-2.5 text-center bg-accent-subtle text-accent rounded-sm font-semibold text-sm border border-transparent hover:border-accent transition-all disabled:opacity-50"
           >
-            {deploying === s.id ? "Deploying..." : isConnected ? "Deploy Agent" : "Connect & Deploy"}
+            {deploying === s.id ? (isAuthenticating ? "Signing..." : "Deploying...") : isConnected ? "Deploy Agent" : "Connect & Deploy"}
           </button>
         </div>
       ))}
