@@ -24,9 +24,8 @@ async function main() {
   const vr = await fetch(`${BASE}/api/auth/siwe`, { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ message, signature }) });
   cookie = ext(vr) || cookie;
 
-  // Backup key
-  const bSig = await account.signMessage({ message: "a2ex backup key\n\nSigning creates your encrypted backup key.\nNo transaction will be sent." });
-  const bKey = createHash("sha256").update(bSig).digest("hex");
+  // Derive backup key from SIWE signature (single signature)
+  const bKey = createHash("sha256").update(signature).digest("hex");
   const pr = await fetch(`${BASE}/api/auth/siwe`, { method: "PUT", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ backupKey: bKey }) });
   cookie = ext(pr) || cookie;
   console.log("Auth + backup key done");

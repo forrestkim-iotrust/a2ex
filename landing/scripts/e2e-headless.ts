@@ -73,14 +73,10 @@ async function step1_siweAuth(): Promise<boolean> {
   const result = await verifyRes.json();
   log(`  Authenticated: ${result.address}`);
 
-  // Sign backup key message
-  const backupSig = await account.signMessage({
-    message: "a2ex backup key\n\nSigning creates your encrypted backup key.\nNo transaction will be sent.",
-  });
-  const backupKey = createHash("sha256").update(backupSig).digest("hex");
-  log(`  Backup key derived (${backupKey.slice(0, 16)}...)`);
+  // Derive backup key from SIWE signature (no extra signature needed)
+  const backupKey = createHash("sha256").update(signature).digest("hex");
+  log(`  Backup key derived from SIWE sig (${backupKey.slice(0, 16)}...)`);
 
-  // Store backup key in session
   const putRes = await fetch(`${BASE_URL}/api/auth/siwe`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", cookie: sessionCookie },

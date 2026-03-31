@@ -62,12 +62,14 @@ export async function POST(req: NextRequest) {
 
     // If recovering from a previous deployment, carry over its encrypted backup
     let recoveryBackup: string | undefined;
+    let recoveryBackupKey: string | undefined;
     if (recoveryFromId) {
-      const [source] = await db.select({ encryptedBackup: deployments.encryptedBackup })
+      const [source] = await db.select({ encryptedBackup: deployments.encryptedBackup, config: deployments.config })
         .from(deployments)
         .where(and(eq(deployments.id, recoveryFromId), eq(deployments.userAddress, auth.userAddress!)));
       if (source?.encryptedBackup) {
         recoveryBackup = source.encryptedBackup;
+        recoveryBackupKey = (source.config as Record<string, any>)?._backupKey;
         log("deploy.recovery", { deploymentId: deployment.id, recoveryFromId });
       }
     }
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
           _callbackToken: callbackToken,
           _openrouterApiKey: process.env.OPENROUTER_API_KEY,
           _waiaasPassword: waiaasPassword,
-          ...(backupKey ? { _backupKey: backupKey } : {}),
+          ...(backupKey ? { _backupKey: backupKey } : recoveryBackupKey ? { _backupKey: recoveryBackupKey } : {}),
           ...(recoveryBackup ? { _recoveryData: recoveryBackup } : {}),
         },
       })
