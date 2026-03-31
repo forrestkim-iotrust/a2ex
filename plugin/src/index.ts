@@ -17,6 +17,7 @@ import {
 } from "./services/waiaas.service.js";
 import { readState, writeState } from "./state/plugin-state.js";
 import type { A2exPluginState } from "./state/plugin-state.js";
+import { createCallbackClient, type CallbackClient } from "./transport/callback-client.js";
 import { join } from "node:path";
 
 // ---------------------------------------------------------------------------
@@ -89,6 +90,9 @@ let capturedStateDir: string | null = null;
 let isStopping = false;
 let healthcheckHandle: { stop: () => void } | null = null;
 let a2exRecoveryHandle: { stop: () => void; start: () => Promise<void> } | null = null;
+let callbackClient: CallbackClient | null = null;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let commandPollInterval: ReturnType<typeof setInterval> | null = null;
 
 /** Thunk for dependency injection into the tool factory. */
 const getStateDir = (): string | null => capturedStateDir;
@@ -105,6 +109,9 @@ export function __resetForTesting(): void {
   healthcheckHandle = null;
   a2exRecoveryHandle?.stop();
   a2exRecoveryHandle = null;
+  if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+  if (commandPollInterval) { clearInterval(commandPollInterval); commandPollInterval = null; }
+  callbackClient = null;
   clearMcpCache();
 }
 
@@ -123,6 +130,32 @@ export default function register(api: OpenClawPluginApi): void {
     async start(ctx) {
       capturedStateDir = ctx.stateDir;
       isStopping = false;
+
+      // Initialize callback client (reads CALLBACK_URL/TOKEN/DEPLOYMENT_ID env vars)
+      callbackClient = createCallbackClient();
+      if (callbackClient.enabled) {
+        // Send initial heartbeat immediately
+        callbackClient.heartbeat("bootstrap").catch(() => {});
+
+        // Periodic heartbeat every 30s
+        heartbeatInterval = setInterval(() => {
+          if (!isStopping && callbackClient?.enabled) {
+            callbackClient.heartbeat(a2exRecoveryHandle ? "trading" : "ready").catch(() => {});
+          }
+        }, 30_000);
+
+        // Poll for user commands every 5s
+        commandPollInterval = setInterval(async () => {
+          if (!isStopping && callbackClient?.enabled) {
+            // Commands are polled but not yet routed to OpenClaw conversation.
+            // This is a placeholder for Phase 2 command routing.
+            const commands = await callbackClient.pollCommands();
+            if (commands.length > 0) {
+              console.log(`[callback] Received ${commands.length} commands (routing not yet implemented)`);
+            }
+          }
+        }, 5_000);
+      }
 
       let state = await readState(ctx.stateDir);
       if (state != null && state.waiaasDataDir == null) {
@@ -190,6 +223,11 @@ export default function register(api: OpenClawPluginApi): void {
 
     async stop() {
       isStopping = true;
+
+      // Tear down callback intervals
+      if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+      if (commandPollInterval) { clearInterval(commandPollInterval); commandPollInterval = null; }
+      callbackClient = null;
 
       // Tear down WAIaaS healthcheck interval
       healthcheckHandle?.stop();
