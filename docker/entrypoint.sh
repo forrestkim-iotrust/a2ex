@@ -73,7 +73,7 @@ done
 export A2EX_BINARY_PATH="/usr/local/bin/a2ex-mcp"
 export A2EX_WAIAAS_BASE_URL="http://localhost:3100"
 
-# Inject runtime API key via auth-profiles.json
+# Inject runtime API key via both auth-profiles.json and config env
 if [ -n "${OPENROUTER_API_KEY:-}" ]; then
   mkdir -p ~/.openclaw/agents/main/agent
   cat > ~/.openclaw/agents/main/agent/auth-profiles.json <<EOF
@@ -85,7 +85,9 @@ if [ -n "${OPENROUTER_API_KEY:-}" ]; then
   }
 }
 EOF
-  echo "[a2ex] API key injected via auth-profiles.json"
+  # Also set env in OpenClaw config (some versions read from here)
+  openclaw config set env.OPENROUTER_API_KEY "${OPENROUTER_API_KEY}" 2>/dev/null || true
+  echo "[a2ex] API key injected"
 fi
 
 # Set gateway token at runtime
