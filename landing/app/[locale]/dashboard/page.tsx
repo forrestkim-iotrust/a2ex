@@ -381,6 +381,7 @@ export default function DashboardPage() {
   const phase = config?._phase as string | undefined;
   const lastHeartbeat = config?._lastHeartbeat as string | undefined;
   const gatewayAlive = phase === "ready" || phase === "trading" || phase === "bootstrap";
+  const agentReady = phase === "ready" || phase === "trading";
   const unhealthy = status === "active" && lastHeartbeat
     ? (Date.now() - new Date(lastHeartbeat).getTime()) > 60000
     : false;
@@ -583,7 +584,7 @@ export default function DashboardPage() {
             <div className="min-h-[120px] max-h-[280px] overflow-y-auto mb-3 space-y-2 scrollbar-thin" role="log" aria-label="Chat messages" aria-live="polite">
               {allMessages.length === 0 ? (
                 <div className="text-sm text-text-muted py-4 text-center">
-                  {isTerminated ? "Agent terminated. Chat is read-only." : isDeploying(status) ? "Agent is starting up..." : "Say hi to your agent!"}
+                  {isTerminated ? "Agent terminated. Chat is read-only." : (isDeploying(status) || !agentReady) ? "Agent is starting up..." : "Say hi to your agent!"}
                 </div>
               ) : (
                 <AnimatePresence initial={false}>
@@ -613,15 +614,15 @@ export default function DashboardPage() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendChat()}
                 placeholder={
-                  isTerminated ? "Agent is terminated" : isDeploying(status) ? "Agent is starting up..." : "Ask your agent anything..."
+                  isTerminated ? "Agent is terminated" : (isDeploying(status) || !agentReady) ? "Agent is starting up..." : "Ask your agent anything..."
                 }
                 maxLength={500}
-                disabled={isTerminated || isDeploying(status)}
+                disabled={isTerminated || isDeploying(status) || !agentReady}
                 className="flex-1 px-3.5 py-2.5 bg-bg border border-border rounded-sm text-sm outline-none focus:border-accent transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSendChat}
-                disabled={isTerminated || isDeploying(status) || !chatInput.trim()}
+                disabled={isTerminated || isDeploying(status) || !agentReady || !chatInput.trim()}
                 className="px-4 sm:px-5 py-2.5 bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send message"
               >
