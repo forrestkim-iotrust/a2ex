@@ -44,9 +44,7 @@ function formatUptime(createdAt: string): string {
 }
 
 function formatStrategy(strategyId: string): string {
-  return strategyId
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return strategyId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function truncateAddress(addr: string): string {
@@ -64,6 +62,7 @@ function statusColor(status: string, phase?: string, unhealthy?: boolean, gatewa
     case "sdl_generated":
     case "awaiting_bids":
     case "selecting_provider":
+    case "creating_lease":
     case "terminating":
       return "bg-accent";
     case "terminated":
@@ -89,6 +88,7 @@ function statusLabel(status: string, phase?: string, unhealthy?: boolean, gatewa
     case "sdl_generated": return "Config Built";
     case "awaiting_bids": return "Finding Providers";
     case "selecting_provider": return "Selecting Provider";
+    case "creating_lease": return "Creating Lease";
     case "terminating": return "Shutting Down";
     case "terminated": return "Terminated";
     case "failed": return "Failed";
@@ -99,8 +99,9 @@ function statusLabel(status: string, phase?: string, unhealthy?: boolean, gatewa
 const DEPLOY_STEPS = [
   { key: "pending", label: "Create", desc: "Initializing deployment" },
   { key: "sdl_generated", label: "Build", desc: "Configuration generated" },
-  { key: "awaiting_bids", label: "Discover", desc: "Searching Akash providers" },
+  { key: "awaiting_bids", label: "Discover", desc: "Searching providers" },
   { key: "selecting_provider", label: "Select", desc: "Choosing best provider" },
+  { key: "creating_lease", label: "Lease", desc: "Creating lease" },
   { key: "active", label: "Live", desc: "Agent is running" },
 ] as const;
 
@@ -112,9 +113,8 @@ function isDeploying(status: string): boolean {
 
 function DeployProgress({ status, bidCount }: { status: string; bidCount?: number }) {
   const currentIdx = DEPLOY_ORDER.indexOf(status as any);
-
   return (
-    <div className="bg-surface rounded-md p-6 space-y-4">
+    <div className="bg-surface rounded-md p-4 sm:p-6 space-y-4" role="progressbar" aria-valuenow={currentIdx} aria-valuemin={0} aria-valuemax={DEPLOY_STEPS.length - 1} aria-label="Deployment progress">
       <div className="text-[13px] font-semibold text-text-muted">Deploying to Akash Network</div>
       <div className="flex items-center gap-1">
         {DEPLOY_STEPS.map((step, i) => {
@@ -125,14 +125,11 @@ function DeployProgress({ status, bidCount }: { status: string; bidCount?: numbe
               <div className="w-full flex items-center">
                 <motion.div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                    done
-                      ? "bg-accent text-bg"
-                      : active
-                        ? "bg-accent/20 text-accent border-2 border-accent"
-                        : "bg-border text-text-muted"
+                    done ? "bg-accent text-bg" : active ? "bg-accent/20 text-accent border-2 border-accent" : "bg-border text-text-muted"
                   }`}
                   animate={active ? { scale: [1, 1.15, 1] } : {}}
                   transition={active ? { repeat: Infinity, duration: 1.5 } : {}}
+                  aria-label={`Step ${i + 1}: ${step.label} — ${done ? "complete" : active ? "in progress" : "pending"}`}
                 >
                   {done ? "✓" : i + 1}
                 </motion.div>
@@ -140,7 +137,7 @@ function DeployProgress({ status, bidCount }: { status: string; bidCount?: numbe
                   <div className={`flex-1 h-[2px] mx-1 ${done ? "bg-accent" : "bg-border"}`} />
                 )}
               </div>
-              <div className="text-center">
+              <div className="text-center hidden sm:block">
                 <div className={`text-[11px] font-semibold ${active ? "text-accent" : done ? "text-text-muted" : "text-text-muted/50"}`}>
                   {step.label}
                 </div>
@@ -150,10 +147,8 @@ function DeployProgress({ status, bidCount }: { status: string; bidCount?: numbe
         })}
       </div>
       <div className="text-center">
-        <div className="text-sm text-accent font-medium">
-          {DEPLOY_STEPS[currentIdx]?.desc ?? "Processing..."}
-        </div>
-        {status === "awaiting_bids" && bidCount !== undefined && bidCount > 0 && (
+        <div className="text-sm text-accent font-medium">{DEPLOY_STEPS[currentIdx]?.desc ?? "Processing..."}</div>
+        {(status === "awaiting_bids" || status === "selecting_provider") && bidCount !== undefined && bidCount > 0 && (
           <div className="text-xs text-text-muted mt-1 font-mono">{bidCount} providers found</div>
         )}
       </div>
@@ -161,12 +156,35 @@ function DeployProgress({ status, bidCount }: { status: string; bidCount?: numbe
   );
 }
 
-const demoTrades: Trade[] = [
-  { id: "1", venue: "Polymarket", action: "BUY", amountUsd: "10.00", pnlUsd: "3.20", ts: new Date().toISOString() },
-  { id: "2", venue: "Polymarket", action: "SELL", amountUsd: "8.50", pnlUsd: "1.87", ts: new Date().toISOString() },
-  { id: "3", venue: "Hyperliquid", action: "LONG", amountUsd: "15.00", pnlUsd: "-0.43", ts: new Date().toISOString() },
-  { id: "4", venue: "Polymarket", action: "BUY", amountUsd: "12.00", pnlUsd: "7.83", ts: new Date().toISOString() },
-];
+function FailedRecovery({ error, deploymentId, locale }: { error?: string; deploymentId: string; locale: string }) {
+  return (
+    <div className="bg-surface rounded-md p-6 space-y-4 border border-danger/20" role="alert">
+      <div className="flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-danger" />
+        <span className="text-sm font-semibold text-danger">Deployment Failed</span>
+      </div>
+      {error && <div className="text-sm text-text-muted bg-bg rounded p-3 font-mono text-xs break-all">{error}</div>}
+      <div className="text-sm text-text-muted">
+        Your $5 deposit has been automatically returned to the Akash escrow wallet.
+        No funds were lost.
+      </div>
+      <div className="flex gap-3">
+        <Link
+          href={`/${locale}`}
+          className="flex-1 py-2.5 text-center bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors min-h-[44px] flex items-center justify-center"
+        >
+          Deploy New Agent
+        </Link>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2.5 border border-border text-sm rounded-sm hover:bg-surface transition-colors min-h-[44px]"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -181,61 +199,96 @@ export default function DashboardPage() {
   const [uptime, setUptime] = useState("00:00:00");
   const [fetchError, setFetchError] = useState(false);
   const [bidCount, setBidCount] = useState(0);
+  const [sseStatus, setSseStatus] = useState<string | undefined>();
+  const [sseError, setSseError] = useState<string | undefined>();
   const [prevTradeIds, setPrevTradeIds] = useState<Set<string>>(new Set());
   const [newTradeIds, setNewTradeIds] = useState<Set<string>>(new Set());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sseRef = useRef<EventSource | null>(null);
 
-  // --- Fetch deployment data with 5s polling ---
+  // --- Fetch deployment data (one-shot hydration + Phase 2 polling) ---
   const fetchData = useCallback(async () => {
     if (!deploymentId) return;
     try {
       const res = await fetch(`/api/agent?deploymentId=${deploymentId}`);
-      if (!res.ok) {
-        setFetchError(true);
-        return;
-      }
+      if (!res.ok) { setFetchError(true); return; }
       const json: DeploymentData = await res.json();
       setData(json);
       setFetchError(false);
       if (json.deployment.status === "terminated" || json.deployment.status === "terminating") {
         setIsTerminating(true);
       }
-    } catch {
-      setFetchError(true);
-    }
+    } catch { setFetchError(true); }
   }, [deploymentId]);
 
+  // Initial hydration
   useEffect(() => {
-    if (!deploymentId) return;
     fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, [deploymentId, fetchData]);
+  }, [fetchData]);
 
-  // --- Deploy progress polling (fast, 2s) when deploying ---
+  // Phase 2 polling (only when active, 5s interval)
   useEffect(() => {
     const status = data?.deployment?.status;
-    if (!deploymentId || !status || !isDeploying(status)) return;
+    if (!deploymentId || !status) return;
+    if (isDeploying(status)) return; // SSE handles deploying states
+    if (status === "terminated" || status === "failed") return; // no need to poll
 
-    const pollProgress = async () => {
-      try {
-        const res = await fetch(`/api/deploy/progress?deploymentId=${deploymentId}`);
-        if (!res.ok) return;
-        const json = await res.json();
-        if (json.bidCount) setBidCount(json.bidCount);
-        // Refresh main data if status changed
-        if (json.status !== status) fetchData();
-      } catch { /* retry next tick */ }
-    };
-
-    pollProgress();
-    const interval = setInterval(pollProgress, 2000);
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [deploymentId, data?.deployment?.status, fetchData]);
 
-  // --- Uptime ticker (1s) ---
+  // --- Phase 1 SSE (deploy lifecycle only) ---
+  useEffect(() => {
+    const status = data?.deployment?.status;
+    if (!deploymentId || !status || !isDeploying(status)) {
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+      return;
+    }
+    if (sseRef.current) return; // don't open duplicate
+
+    const es = new EventSource(`/api/deploy/stream?deploymentId=${deploymentId}`);
+    sseRef.current = es;
+
+    es.addEventListener("status", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.status) setSseStatus(d.status);
+        if (d.bidCount) setBidCount(d.bidCount);
+      } catch {}
+    });
+
+    es.addEventListener("bids", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.bidCount != null) setBidCount(d.bidCount);
+      } catch {}
+    });
+
+    es.addEventListener("active", () => {
+      fetchData(); // refresh full data
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+    });
+
+    es.addEventListener("failed", (e) => {
+      try { const d = JSON.parse(e.data); setSseError(d.error); } catch {}
+      fetchData();
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+    });
+
+    es.onerror = () => {
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+      fetchData(); // check current state
+    };
+
+    return () => {
+      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+    };
+  }, [deploymentId, data?.deployment?.status, fetchData]);
+
+  // --- Uptime ticker ---
   useEffect(() => {
     if (!data?.deployment?.createdAt) return;
     const tick = () => setUptime(formatUptime(data.deployment.createdAt));
@@ -249,11 +302,24 @@ export default function DashboardPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.messages, localMessages]);
 
-  // --- Kill Switch ---
+  // --- Cancel Deploy (during Phase 1) ---
+  const handleCancelDeploy = async () => {
+    if (!deploymentId) return;
+    if (!confirm("Cancel this deployment? The deposit will be returned.")) return;
+    try {
+      const res = await fetch("/api/deploy/terminate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deploymentId }),
+      });
+      if (res.ok) { setIsTerminating(true); fetchData(); }
+    } catch {}
+  };
+
+  // --- Kill Switch (when active) ---
   const handleKillSwitch = async () => {
     if (!deploymentId) return;
     if (!confirm("Are you sure? This will close all positions and return funds.")) return;
-
     try {
       const res = await fetch("/api/deploy/terminate", {
         method: "POST",
@@ -262,31 +328,21 @@ export default function DashboardPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Failed to terminate deployment.");
+        alert(err.error ?? "Failed to terminate.");
         return;
       }
       setIsTerminating(true);
       fetchData();
-    } catch {
-      alert("Network error. Could not reach the server.");
-    }
+    } catch { alert("Network error."); }
   };
 
   // --- Send Chat ---
   const handleSendChat = async () => {
     if (!deploymentId || !chatInput.trim()) return;
     const content = chatInput.trim();
-
-    // Optimistic local message
-    const optimistic: Message = {
-      id: `local-${Date.now()}`,
-      content,
-      direction: "user_to_agent",
-      ts: new Date().toISOString(),
-    };
+    const optimistic: Message = { id: `local-${Date.now()}`, content, direction: "user_to_agent", ts: new Date().toISOString() };
     setLocalMessages((prev) => [...prev, optimistic]);
     setChatInput("");
-
     try {
       const res = await fetch("/api/agent/command", {
         method: "POST",
@@ -294,21 +350,17 @@ export default function DashboardPage() {
         body: JSON.stringify({ deploymentId, content }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Failed to send message.");
-        // Remove optimistic message on failure
+        alert("Failed to send message.");
         setLocalMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       }
     } catch {
-      alert("Network error. Could not send message.");
+      alert("Network error.");
       setLocalMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
     }
   };
 
-  // --- First trade confetti ---
+  // --- Confetti + trade flash ---
   useFirstTradeConfetti(data?.trades ?? []);
-
-  // --- Track new trades for flash animation ---
   useEffect(() => {
     if (!data?.trades?.length) return;
     const currentIds = new Set(data.trades.map((t) => t.id));
@@ -320,64 +372,36 @@ export default function DashboardPage() {
     setPrevTradeIds(currentIds);
   }, [data?.trades]);
 
-  // --- Gateway health polling (after active, before heartbeat) ---
-  const [gatewayAlive, setGatewayAlive] = useState(false);
-
-  useEffect(() => {
-    const status = data?.deployment?.status;
-    const config = data?.deployment?.config as Record<string, any> | undefined;
-    const gwUrl = config?._gatewayUrl;
-    if (status !== "active" || !gwUrl || gatewayAlive) return;
-
-    const checkGateway = async () => {
-      try {
-        const res = await fetch(gwUrl, { mode: "no-cors", signal: AbortSignal.timeout(5000) });
-        setGatewayAlive(true);
-      } catch { /* not ready yet */ }
-    };
-
-    checkGateway();
-    const interval = setInterval(checkGateway, 10000);
-    return () => clearInterval(interval);
-  }, [data?.deployment?.status, data?.deployment?.config, gatewayAlive]);
-
   // --- Derived state ---
+  const displayStatus = sseStatus ?? data?.deployment?.status ?? "pending";
   const status = data?.deployment?.status ?? "pending";
   const isTerminated = status === "terminated" || status === "failed";
   const config = data?.deployment?.config as Record<string, any> | undefined;
   const gatewayUrl = config?._gatewayUrl as string | undefined;
   const phase = config?._phase as string | undefined;
   const lastHeartbeat = config?._lastHeartbeat as string | undefined;
+  const gatewayAlive = phase === "ready" || phase === "trading" || phase === "bootstrap";
   const unhealthy = status === "active" && lastHeartbeat
     ? (Date.now() - new Date(lastHeartbeat).getTime()) > 60000
     : false;
-  // Only show demo data when agent is active and has no real trades
   const showDemo = status === "active" && gatewayAlive && !data?.trades?.length;
-  const trades = data?.trades?.length ? data.trades : showDemo ? demoTrades : [];
+  const trades = data?.trades?.length ? data.trades : [];
   const totalPnl = data?.trades?.length
     ? data.trades.reduce((sum, t) => sum + parseFloat(t.pnlUsd || "0"), 0)
     : 0;
 
-  // Merge server messages with local optimistic messages, deduplicate by content+time
   const serverMessages = data?.messages ?? [];
   const serverContentSet = new Set(serverMessages.map((m) => m.content + m.direction));
-  const uniqueLocal = localMessages.filter(
-    (m) => !serverContentSet.has(m.content + m.direction)
-  );
-  const allMessages: Message[] = [
-    ...serverMessages,
-    ...uniqueLocal,
-  ].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+  const uniqueLocal = localMessages.filter((m) => !serverContentSet.has(m.content + m.direction));
+  const allMessages: Message[] = [...serverMessages, ...uniqueLocal]
+    .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
 
-  // --- No deployment selected ---
   if (!deploymentId) {
     return (
       <div className="min-h-screen pt-14 flex items-center justify-center">
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-3 px-6">
           <div className="text-2xl font-semibold">No Deployment Selected</div>
-          <div className="text-sm text-text-muted">
-            Deploy an agent first, then return here with a deployment ID.
-          </div>
+          <div className="text-sm text-text-muted">Deploy an agent first, then return here.</div>
         </div>
       </div>
     );
@@ -386,43 +410,56 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-bg/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-[1440px] px-6 flex items-center justify-between h-14">
-          <Link href={`/${locale}`} className="text-lg font-bold tracking-tight hover:text-accent transition">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-bg/80 backdrop-blur-sm" role="navigation" aria-label="Main navigation">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 flex items-center justify-between h-14">
+          <Link href={`/${locale}`} className="text-lg font-bold tracking-tight hover:text-accent transition min-h-[44px] flex items-center">
             a2ex<span className="text-accent">.</span>
           </Link>
           <div className="flex items-center gap-4 text-[13px]">
-            <span className="text-text-muted">Dashboard</span>
-            <Link href={`/${locale}`} className="text-text-muted hover:text-accent transition">
+            {/* Mobile sidebar toggle */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="sm:hidden min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Toggle sidebar"
+            >
+              <span className={`w-2 h-2 rounded-full ${statusColor(isDeploying(status) ? displayStatus : status, phase, unhealthy, gatewayAlive)}`} />
+            </button>
+            <span className="text-text-muted hidden sm:inline">Dashboard</span>
+            <Link href={`/${locale}`} className="text-text-muted hover:text-accent transition min-h-[44px] flex items-center">
               Deploy New
             </Link>
           </div>
         </div>
       </nav>
-      <div className="flex h-[calc(100vh-56px)] pt-14">
-        {/* Sidebar */}
-        <aside className="w-[240px] border-r border-border bg-surface p-6 flex flex-col gap-6 shrink-0">
+
+      <div className="flex flex-col sm:flex-row h-[calc(100vh-56px)] pt-14">
+        {/* Sidebar — hidden on mobile unless toggled */}
+        <aside
+          className={`${sidebarOpen ? "block" : "hidden"} sm:block w-full sm:w-[240px] border-b sm:border-b-0 sm:border-r border-border bg-surface p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 shrink-0`}
+          role="complementary"
+          aria-label="Agent status sidebar"
+        >
           {/* Status */}
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-2 rounded-sm bg-accent-subtle border border-accent/15 px-4 py-3"
+            role="status"
+            aria-live="polite"
           >
             <span
-              className={`w-2 h-2 rounded-full ${statusColor(status, phase, unhealthy, gatewayAlive)} ${
+              className={`w-2 h-2 rounded-full ${statusColor(isDeploying(status) ? displayStatus : status, phase, unhealthy, gatewayAlive)} ${
                 status === "active" && !unhealthy ? "animate-pulse" : ""
               }`}
             />
-            <span className="text-[13px] font-semibold">{statusLabel(status, phase, unhealthy, gatewayAlive)}</span>
+            <span className="text-[13px] font-semibold">
+              {statusLabel(isDeploying(status) ? displayStatus : status, phase, unhealthy, gatewayAlive)}
+            </span>
           </motion.div>
 
           <div>
             <div className="text-xs text-text-muted mb-1">Strategy</div>
-            <div className="text-sm font-semibold">
-              {data?.deployment?.strategyId
-                ? formatStrategy(data.deployment.strategyId)
-                : "—"}
-            </div>
+            <div className="text-sm font-semibold">{data?.deployment?.strategyId ? formatStrategy(data.deployment.strategyId) : "—"}</div>
           </div>
 
           <div>
@@ -433,9 +470,7 @@ export default function DashboardPage() {
           <div>
             <div className="text-xs text-text-muted mb-1">Hot Address</div>
             <div className="font-mono text-sm" title={data?.deployment?.hotAddress}>
-              {data?.deployment?.hotAddress
-                ? truncateAddress(data.deployment.hotAddress)
-                : "—"}
+              {data?.deployment?.hotAddress ? truncateAddress(data.deployment.hotAddress) : "—"}
             </div>
           </div>
 
@@ -452,75 +487,68 @@ export default function DashboardPage() {
           )}
 
           {unhealthy && (
-            <div className="text-xs text-warning">
+            <div className="text-xs text-warning" role="alert">
               Agent not responding. Last seen: {lastHeartbeat ? `${Math.round((Date.now() - new Date(lastHeartbeat).getTime()) / 1000)}s ago` : "never"}
             </div>
           )}
-          {fetchError && !unhealthy && (
-            <div className="text-xs text-text-muted">Reconnecting...</div>
-          )}
+          {fetchError && !unhealthy && <div className="text-xs text-text-muted">Reconnecting...</div>}
 
-          {/* Kill Switch */}
-          <button
-            onClick={handleKillSwitch}
-            disabled={isTerminating || isTerminated || isDeploying(status)}
-            className="mt-auto py-3 text-center bg-danger/10 text-danger border border-danger/20 rounded-sm font-semibold text-sm transition-all hover:bg-danger/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isTerminated
-              ? "Terminated"
-              : isTerminating
-                ? "Shutting down..."
-                : "Kill Switch"}
-          </button>
+          {/* Cancel Deploy (during Phase 1) or Kill Switch (when active) */}
+          {isDeploying(status) ? (
+            <button
+              onClick={handleCancelDeploy}
+              disabled={isTerminating}
+              className="mt-auto py-3 text-center bg-border/50 text-text-muted border border-border rounded-sm font-semibold text-sm transition-all hover:bg-border hover:text-text min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Cancel deployment"
+            >
+              Cancel Deploy
+            </button>
+          ) : (
+            <button
+              onClick={handleKillSwitch}
+              disabled={isTerminating || isTerminated}
+              className="mt-auto py-3 text-center bg-danger/10 text-danger border border-danger/20 rounded-sm font-semibold text-sm transition-all hover:bg-danger/20 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={isTerminated ? "Agent terminated" : "Kill switch — terminate agent"}
+            >
+              {isTerminated ? "Terminated" : isTerminating ? "Shutting down..." : "Kill Switch"}
+            </button>
+          )}
         </aside>
 
         {/* Main */}
-        <main className="flex-1 p-6 overflow-y-auto space-y-4">
-          {/* Deploy Progress (shown during deployment) */}
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4" role="main" aria-label="Dashboard main content">
+          {/* Deploy Progress */}
           {isDeploying(status) && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <DeployProgress status={status} bidCount={bidCount} />
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <DeployProgress status={displayStatus} bidCount={bidCount} />
+            </motion.div>
+          )}
+
+          {/* Failed Recovery */}
+          {status === "failed" && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <FailedRecovery error={sseError} deploymentId={deploymentId} locale={locale} />
             </motion.div>
           )}
 
           {/* P&L */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="bg-surface rounded-md p-6"
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-surface rounded-md p-4 sm:p-6">
             <div className="text-[13px] text-text-muted mb-2">Total P&L</div>
             {isDeploying(status) ? (
-              <div className="font-mono text-4xl font-semibold tabular-nums text-text-muted animate-pulse">—</div>
+              <div className="font-mono text-3xl sm:text-4xl font-semibold tabular-nums text-text-muted animate-pulse">—</div>
             ) : (
-              <div
-                className={`font-mono text-4xl font-semibold tabular-nums ${
-                  totalPnl >= 0 ? "text-success" : "text-danger"
-                }`}
-              >
+              <div className={`font-mono text-3xl sm:text-4xl font-semibold tabular-nums ${totalPnl >= 0 ? "text-success" : "text-danger"}`}>
                 {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
               </div>
             )}
           </motion.div>
 
           {/* Trade Log */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-surface rounded-md p-4"
-          >
-            <div className="text-[13px] font-semibold text-text-muted mb-3">
-              Recent Trades
-              {showDemo && <span className="ml-2 text-xs font-normal opacity-60">(demo)</span>}
-            </div>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-surface rounded-md p-4">
+            <div className="text-[13px] font-semibold text-text-muted mb-3">Recent Trades</div>
             {trades.length === 0 && (
               <div className="text-sm text-text-muted py-4 text-center">
-                {isDeploying(status) ? "Waiting for agent to start..." : "No trades yet."}
+                {isDeploying(status) ? "Waiting for agent to start..." : status === "active" ? "Agent is analyzing markets..." : "No trades yet."}
               </div>
             )}
             <AnimatePresence initial={false}>
@@ -531,24 +559,12 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, x: 0, backgroundColor: newTradeIds.has(trade.id) ? "rgba(240, 160, 48, 0.15)" : "transparent" }}
                   exit={{ opacity: 0 }}
                   transition={{ backgroundColor: { duration: 2 } }}
-                  className="grid grid-cols-[auto_1fr_auto_auto] gap-4 py-2.5 border-b border-border last:border-0 text-[13px] items-center rounded-sm"
+                  className="grid grid-cols-[auto_1fr_auto_auto] gap-2 sm:gap-4 py-2.5 border-b border-border last:border-0 text-[13px] items-center rounded-sm"
                 >
-                  <span className="font-mono text-xs text-text-muted">
-                    {new Date(trade.ts).toLocaleTimeString("en-US", { hour12: false })}
-                  </span>
-                  <span className="font-medium">{trade.venue}</span>
-                  <span
-                    className={`font-mono text-xs ${
-                      trade.action === "SELL" ? "text-danger" : "text-success"
-                    }`}
-                  >
-                    {trade.action}
-                  </span>
-                  <span
-                    className={`font-mono font-semibold text-[13px] ${
-                      parseFloat(trade.pnlUsd) >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
+                  <span className="font-mono text-xs text-text-muted">{new Date(trade.ts).toLocaleTimeString("en-US", { hour12: false })}</span>
+                  <span className="font-medium truncate">{trade.venue}</span>
+                  <span className={`font-mono text-xs ${trade.action === "SELL" ? "text-danger" : "text-success"}`}>{trade.action}</span>
+                  <span className={`font-mono font-semibold text-[13px] ${parseFloat(trade.pnlUsd) >= 0 ? "text-success" : "text-danger"}`}>
                     {parseFloat(trade.pnlUsd) >= 0 ? "+" : ""}${trade.pnlUsd}
                   </span>
                 </motion.div>
@@ -563,41 +579,22 @@ export default function DashboardPage() {
             transition={{ delay: 0.15 }}
             className={`bg-surface rounded-md p-4 ${isTerminated ? "opacity-50" : ""}`}
           >
-            <div className="text-[13px] font-semibold text-text-muted mb-3">
-              Chat with Agent
-            </div>
-
-            {/* Messages area */}
-            <div className="min-h-[120px] max-h-[280px] overflow-y-auto mb-3 space-y-2 scrollbar-thin">
+            <div className="text-[13px] font-semibold text-text-muted mb-3">Chat with Agent</div>
+            <div className="min-h-[120px] max-h-[280px] overflow-y-auto mb-3 space-y-2 scrollbar-thin" role="log" aria-label="Chat messages" aria-live="polite">
               {allMessages.length === 0 ? (
                 <div className="text-sm text-text-muted py-4 text-center">
-                  {isTerminated
-                    ? "Agent terminated. Chat is read-only."
-                    : "Say hi to your agent!"}
+                  {isTerminated ? "Agent terminated. Chat is read-only." : isDeploying(status) ? "Agent is starting up..." : "Say hi to your agent!"}
                 </div>
               ) : (
                 <AnimatePresence initial={false}>
                   {allMessages.map((msg) => {
                     const isUser = msg.direction === "user_to_agent";
                     return (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[75%] px-3 py-2 rounded-md text-sm ${
-                            isUser
-                              ? "bg-accent/15 text-accent"
-                              : "bg-bg border border-border"
-                          }`}
-                        >
+                      <motion.div key={msg.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 rounded-md text-sm ${isUser ? "bg-accent/15 text-accent" : "bg-bg border border-border"}`}>
                           <div>{msg.content}</div>
                           <div className="text-[10px] text-text-muted mt-1 font-mono">
-                            {new Date(msg.ts).toLocaleTimeString("en-US", {
-                              hour12: false,
-                            })}
+                            {new Date(msg.ts).toLocaleTimeString("en-US", { hour12: false })}
                           </div>
                         </div>
                       </motion.div>
@@ -607,31 +604,26 @@ export default function DashboardPage() {
               )}
               <div ref={chatEndRef} />
             </div>
-
-            {/* Input */}
             <div className="flex gap-2">
+              <label htmlFor="chat-input" className="sr-only">Message to agent</label>
               <input
+                id="chat-input"
                 ref={inputRef}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendChat()}
                 placeholder={
-                  isTerminated
-                    ? "Agent is terminated"
-                    : isDeploying(status)
-                      ? "Agent is starting up..."
-                      : phase === "ready"
-                        ? "Ask about the market, your strategy, or recent trades..."
-                        : "Ask your agent anything..."
+                  isTerminated ? "Agent is terminated" : isDeploying(status) ? "Agent is starting up..." : "Ask your agent anything..."
                 }
                 maxLength={500}
                 disabled={isTerminated || isDeploying(status)}
-                className="flex-1 px-3.5 py-2.5 bg-bg border border-border rounded-sm text-sm outline-none focus:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-3.5 py-2.5 bg-bg border border-border rounded-sm text-sm outline-none focus:border-accent transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSendChat}
                 disabled={isTerminated || isDeploying(status) || !chatInput.trim()}
-                className="px-5 py-2.5 bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 sm:px-5 py-2.5 bg-accent text-bg font-semibold text-sm rounded-sm hover:bg-accent-hover transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Send message"
               >
                 Send
               </button>

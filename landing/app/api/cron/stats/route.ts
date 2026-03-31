@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { deployments, trades, statsSnapshots } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
+import { closeAkashDeployment } from "@/lib/akash/client";
 
 export async function GET(req: NextRequest) {
   // Verify cron secret
@@ -33,5 +34,23 @@ export async function GET(req: NextRequest) {
     totalPnlUsd: tradeStats[0]?.totalPnl ?? "0",
   });
 
-  return NextResponse.json({ ok: true });
+  // Cleanup: stuck deployments in selecting_provider for 5+ minutes
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const stuck = await db.select({ id: deployments.id, akashDseq: deployments.akashDseq })
+    .from(deployments)
+    .where(and(
+      eq(deployments.status, "selecting_provider"),
+      lt(deployments.createdAt, fiveMinAgo),
+    ));
+
+  let cleaned = 0;
+  for (const d of stuck) {
+    await db.update(deployments).set({ status: "failed" }).where(eq(deployments.id, d.id));
+    if (d.akashDseq) {
+      try { await closeAkashDeployment(d.akashDseq); } catch {}
+    }
+    cleaned++;
+  }
+
+  return NextResponse.json({ ok: true, cleaned });
 }
