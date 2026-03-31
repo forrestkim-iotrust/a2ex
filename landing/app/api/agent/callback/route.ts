@@ -4,6 +4,7 @@ import { deployments, trades, agentMessages } from "@/lib/db/schema";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { getRedis } from "@/lib/redis";
 import { Ratelimit } from "@upstash/ratelimit";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ async function publishEvent(deploymentId: string, type: string, data: Record<str
   } catch { /* non-blocking — DB write already succeeded */ }
 }
 
-// POST — Agent reports trade, heartbeat, or message
+// POST — Agent reports trade, heartbeat, message, balance_update, or backup
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { deploymentId, type, ...payload } = body;
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
   switch (type) {
     case "trade": {
       const { venue, action, amountUsd, pnlUsd } = payload;
+      log("callback.trade", { deploymentId, venue, action, amountUsd });
       const [trade] = await db.insert(trades).values({
         deploymentId,
         venue: venue ?? "unknown",
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
 
     case "heartbeat": {
       const { phase } = payload;
+      log("callback.heartbeat", { deploymentId, phase });
       const config = deployment.config as Record<string, any>;
       await db.update(deployments)
         .set({
@@ -115,12 +118,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    case "balance_update": {
+      const { usdcBalance } = payload;
+      log("callback.balance_update", { deploymentId, usdcBalance });
+      const config = deployment.config as Record<string, any>;
+      await db.update(deployments)
+        .set({
+          config: {
+            ...config,
+            _usdcBalance: usdcBalance?.toString() ?? "0",
+            _lastBalanceUpdate: new Date().toISOString(),
+          },
+        })
+        .where(eq(deployments.id, deploymentId));
+      await publishEvent(deploymentId, "balance_update", { usdcBalance });
+      return NextResponse.json({ ok: true });
+    }
+
+    case "backup": {
+      const { encryptedData } = payload;
+      if (!encryptedData) {
+        return NextResponse.json({ error: "encryptedData required" }, { status: 400 });
+      }
+      log("callback.backup", { deploymentId, size: encryptedData.length });
+      const config = deployment.config as Record<string, any>;
+      await db.update(deployments)
+        .set({
+          encryptedBackup: encryptedData,
+          config: {
+            ...config,
+            _lastBackupAt: new Date().toISOString(),
+          },
+        })
+        .where(eq(deployments.id, deploymentId));
+      await publishEvent(deploymentId, "backup", { success: true });
+      return NextResponse.json({ ok: true });
+    }
+
     default:
       return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 });
   }
 }
 
-// GET — Agent polls for pending user commands
+// GET — Agent polls for pending user commands or requests secrets
 export async function GET(req: NextRequest) {
   const deploymentId = req.nextUrl.searchParams.get("deploymentId");
   if (!deploymentId) {
@@ -130,6 +170,19 @@ export async function GET(req: NextRequest) {
   const deployment = await authenticateCallback(req, deploymentId);
   if (!deployment) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const reqType = req.nextUrl.searchParams.get("type");
+
+  if (reqType === "secrets") {
+    log("callback.secrets_requested", { deploymentId });
+    const config = deployment.config as Record<string, any>;
+    return NextResponse.json({
+      openrouterApiKey: config?._openrouterApiKey ?? "",
+      waiaasPassword: config?._waiaasPassword ?? "",
+      gatewayToken: config?._gatewayToken ?? "",
+      backupKey: config?._backupKey ?? "",
+    });
   }
 
   const db = getDb();

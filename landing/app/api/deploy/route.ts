@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/middleware";
+import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { deployments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createAkashDeployment } from "@/lib/akash/client";
 import { buildSDL } from "@/lib/akash/sdl";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -23,20 +25,24 @@ export async function POST(req: NextRequest) {
     status: "pending",
   }).returning();
 
+  log("deploy.created", { deploymentId: deployment.id, userAddress: auth.userAddress, strategyId });
+
   try {
     // Generate per-deployment secrets
     const gatewayToken = crypto.randomUUID();
     const callbackToken = crypto.randomUUID();
     const waiaasPassword = crypto.randomUUID();
 
-    // Build SDL with platform secrets
+    // Get backup key from session (derived from personal_sign)
+    const session = await getSession();
+    const backupKey = session.backupKey;
+
+    // Build SDL (secrets delivered via callback, not in SDL)
     const sdl = buildSDL({
       strategyId,
       fundAmountUsd: config.fundAmountUsd ?? 50,
       riskLevel: config.riskLevel ?? "medium",
-      openrouterApiKey: process.env.OPENROUTER_API_KEY!,
       openclawGatewayToken: gatewayToken,
-      waiaasPassword,
       callbackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://a2ex.xyz"}/api/agent/callback`,
       deploymentId: deployment.id,
       callbackToken,
@@ -58,9 +64,11 @@ export async function POST(req: NextRequest) {
       .set({
         status: "awaiting_bids",
         akashDseq: dseq,
-        config: { ...config, _manifest: manifest, _gatewayToken: gatewayToken, _callbackToken: callbackToken },
+        config: { ...config, _manifest: manifest, _gatewayToken: gatewayToken, _callbackToken: callbackToken, _openrouterApiKey: process.env.OPENROUTER_API_KEY, _waiaasPassword: waiaasPassword, ...(backupKey ? { _backupKey: backupKey } : {}) },
       })
       .where(eq(deployments.id, deployment.id));
+
+    log("deploy.submitted", { deploymentId: deployment.id, dseq });
 
     // Return immediately — dashboard will poll /api/deploy/progress to advance
     return NextResponse.json({
@@ -69,6 +77,8 @@ export async function POST(req: NextRequest) {
       status: "awaiting_bids",
     });
   } catch (error: any) {
+    log("deploy.failed", { deploymentId: deployment.id, error: error.message });
+
     await db.update(deployments)
       .set({ status: "failed" })
       .where(eq(deployments.id, deployment.id));

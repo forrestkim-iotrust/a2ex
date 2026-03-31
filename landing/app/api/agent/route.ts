@@ -32,13 +32,16 @@ export async function GET(req: NextRequest) {
     .orderBy(desc(agentMessages.ts))
     .limit(40);
 
-  // Filter sensitive config fields
-  const safeConfig = deployment.config ? Object.fromEntries(
-    Object.entries(deployment.config as Record<string, unknown>).filter(
-      ([key]) => !['_callbackToken', '_gatewayToken', '_manifest'].includes(key)
-    )
-  ) : {};
-  const safeDeployment = { ...deployment, config: safeConfig };
+  // Strip internal secrets from config before returning
+  const secretKeys = ["_callbackToken", "_gatewayToken", "_manifest", "_openrouterApiKey", "_waiaasPassword", "_backupKey"];
+  let safeConfig = deployment.config;
+  if (safeConfig && typeof safeConfig === "object") {
+    const filtered = { ...(safeConfig as Record<string, any>) };
+    for (const key of secretKeys) {
+      delete filtered[key];
+    }
+    safeConfig = filtered;
+  }
 
-  return NextResponse.json({ deployment: safeDeployment, trades: recentTrades, messages });
+  return NextResponse.json({ deployment: { ...deployment, config: safeConfig }, trades: recentTrades, messages });
 }

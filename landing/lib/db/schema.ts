@@ -9,6 +9,7 @@ export const deployments = pgTable("deployments", {
   config: jsonb("config").notNull(),
   status: text("status").notNull().default("pending"),
   hotAddress: text("hot_address"),
+  encryptedBackup: text("encrypted_backup"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   terminatedAt: timestamp("terminated_at", { withTimezone: true }),
 });

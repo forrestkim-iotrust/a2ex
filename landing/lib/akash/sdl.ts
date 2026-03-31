@@ -4,10 +4,7 @@ export interface DeployConfig {
   strategyId: string;
   fundAmountUsd: number;
   riskLevel: string;
-  // Platform secrets (injected server-side, not from user input)
-  openrouterApiKey: string;
   openclawGatewayToken: string;
-  waiaasPassword: string;
   callbackUrl: string;
   deploymentId: string;
   callbackToken: string;
@@ -23,9 +20,7 @@ export function buildSDL(config: DeployConfig): string {
           `STRATEGY_ID=${sanitize(config.strategyId)}`,
           `FUND_LIMIT_USD=${Math.min(Math.max(config.fundAmountUsd, 10), 1000)}`,
           `RISK_LEVEL=${sanitize(config.riskLevel)}`,
-          `OPENROUTER_API_KEY=${config.openrouterApiKey}`,
           `OPENCLAW_GATEWAY_TOKEN=${config.openclawGatewayToken}`,
-          `WAIAAS_MASTER_PASSWORD=${config.waiaasPassword}`,
           `CALLBACK_URL=${config.callbackUrl}`,
           `DEPLOYMENT_ID=${config.deploymentId}`,
           `CALLBACK_TOKEN=${config.callbackToken}`,

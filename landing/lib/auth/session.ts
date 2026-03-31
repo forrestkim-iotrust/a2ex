@@ -6,6 +6,7 @@ export interface SessionData {
   chainId?: number;
   nonce?: string;
   sessionCreatedAt?: number;
+  backupKey?: string;
 }
 
 const sessionOptions = {

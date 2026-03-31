@@ -46,6 +46,24 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, address: verified.address });
 }
 
+// PUT — Store backup key derived from personal_sign
+export async function PUT(req: NextRequest) {
+  const session = await getSession();
+  if (!session.userAddress) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { backupKey } = await req.json();
+  if (!backupKey || typeof backupKey !== "string" || backupKey.length < 32) {
+    return NextResponse.json({ error: "Invalid backup key" }, { status: 400 });
+  }
+
+  session.backupKey = backupKey;
+  await session.save();
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE() {
   const session = await getSession();
   session.destroy();

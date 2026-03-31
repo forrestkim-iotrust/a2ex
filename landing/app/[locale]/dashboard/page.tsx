@@ -360,14 +360,7 @@ export default function DashboardPage() {
   };
 
   // --- Confetti + trade flash ---
-  const firstTradeFired = useFirstTradeConfetti(data?.trades ?? []);
-  const [showShareButton, setShowShareButton] = useState(false);
-  useEffect(() => {
-    if (!firstTradeFired) return;
-    setShowShareButton(true);
-    const timer = setTimeout(() => setShowShareButton(false), 10000);
-    return () => clearTimeout(timer);
-  }, [firstTradeFired]);
+  useFirstTradeConfetti(data?.trades ?? []);
   useEffect(() => {
     if (!data?.trades?.length) return;
     const currentIds = new Set(data.trades.map((t) => t.id));
@@ -384,6 +377,8 @@ export default function DashboardPage() {
   const status = data?.deployment?.status ?? "pending";
   const isTerminated = status === "terminated" || status === "failed";
   const config = data?.deployment?.config as Record<string, any> | undefined;
+  const usdcBalance = config?._usdcBalance as string | undefined;
+  const lastBackupAt = config?._lastBackupAt as string | undefined;
   const gatewayUrl = config?._gatewayUrl as string | undefined;
   const phase = config?._phase as string | undefined;
   const lastHeartbeat = config?._lastHeartbeat as string | undefined;
@@ -482,6 +477,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {usdcBalance && (
+            <div>
+              <div className="text-xs text-text-muted mb-1">Hot Wallet Balance</div>
+              <div className="font-mono text-sm font-semibold text-accent">
+                ${parseFloat(usdcBalance).toFixed(2)} <span className="text-text-muted font-normal">USDC</span>
+              </div>
+            </div>
+          )}
+
           {gatewayUrl && (
             <div>
               <div className="text-xs text-text-muted mb-1">Gateway</div>
@@ -490,6 +494,21 @@ export default function DashboardPage() {
                 <span className="font-mono text-xs truncate" title={gatewayUrl}>
                   {gatewayAlive ? "Connected" : "Starting..."}
                 </span>
+              </div>
+            </div>
+          )}
+
+          {status === "active" && (
+            <div>
+              <div className="text-xs text-text-muted mb-1">Backup</div>
+              <div className="text-xs font-mono">
+                {lastBackupAt ? (
+                  <span className="text-success">
+                    {Math.round((Date.now() - new Date(lastBackupAt).getTime()) / 60000)}min ago
+                  </span>
+                ) : (
+                  <span className="text-warning">Pending...</span>
+                )}
               </div>
             </div>
           )}
@@ -549,22 +568,6 @@ export default function DashboardPage() {
                 {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
               </div>
             )}
-            <AnimatePresence>
-              {(showShareButton || firstTradeFired) && (
-                <motion.a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("My AI agent just made its first trade on Polymarket via @a2ex_xyz 🤖")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: showShareButton ? 1 : 0.6 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-accent text-bg text-sm font-semibold rounded-sm hover:bg-accent-hover transition-colors"
-                >
-                  Share on Twitter
-                </motion.a>
-              )}
-            </AnimatePresence>
           </motion.div>
 
           {/* Trade Log */}
