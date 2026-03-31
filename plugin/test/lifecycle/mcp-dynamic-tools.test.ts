@@ -75,7 +75,7 @@ describe("MCP dynamic tools lifecycle", () => {
     expect(toolNames).toContain("a2ex_onboarding_bootstrap_install");
 
     // waiaas tools should also be present
-    expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
+    expect(toolNames.some((n) => n.startsWith("waiaas_"))).toBe(true);
   });
 
   it("a2ex_onboarding_bootstrap_install executes and returns mock response", async () => {
@@ -140,7 +140,7 @@ describe("MCP dynamic tools lifecycle", () => {
     const toolNames = tools!.map((t) => t.name);
 
     // Should have waiaas tools but no a2ex.* dynamic tools
-    expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
+    expect(toolNames.some((n) => n.startsWith("waiaas_"))).toBe(true);
     expect(toolNames.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
   });
 
@@ -176,6 +176,6 @@ describe("MCP dynamic tools lifecycle", () => {
     expect(tools).not.toBeNull();
     const toolNames = tools!.map((t) => t.name);
     expect(toolNames.some((n) => n.startsWith("a2ex_onboarding"))).toBe(false);
-    expect(toolNames.some((n) => n.startsWith("waiaas."))).toBe(true);
+    expect(toolNames.some((n) => n.startsWith("waiaas_"))).toBe(true);
   });
 });
