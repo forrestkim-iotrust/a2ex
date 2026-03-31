@@ -44,22 +44,22 @@ export function useAuth() {
       });
       if (!verifyRes.ok) return false;
 
-      // Step 4: Sign backup key message
-      const backupSig = await signMessageAsync({ message: BACKUP_MESSAGE });
-
-      // Step 5: Derive backup key from signature (sha256)
-      const encoder = new TextEncoder();
-      const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(backupSig));
-      const backupKey = Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
-      // Step 6: Store backup key in session
-      await fetch("/api/auth/siwe", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backupKey }),
-      });
+      // Step 4: Sign backup key (optional — auth succeeds even if this fails)
+      try {
+        const backupSig = await signMessageAsync({ message: BACKUP_MESSAGE });
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(backupSig));
+        const backupKey = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        await fetch("/api/auth/siwe", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ backupKey }),
+        });
+      } catch (backupErr) {
+        console.warn("[auth] Backup key signing skipped:", backupErr);
+      }
 
       return true;
     } catch (err) {
