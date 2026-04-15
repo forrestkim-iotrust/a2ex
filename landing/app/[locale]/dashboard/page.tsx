@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFirstTradeConfetti } from "@/lib/hooks/useFirstTradeConfetti";
 import { useAuth } from "@/lib/hooks/useAuth";
+import FundingModal from "@/components/FundingModal";
 
 interface Trade {
   id: string;
@@ -215,6 +216,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { authenticate, isAuthenticating } = useAuth();
   const [isRecovering, setIsRecovering] = useState(false);
+  const [showFunding, setShowFunding] = useState(false);
 
   // --- Fetch deployment data (one-shot hydration + Phase 2 polling) ---
   const fetchData = useCallback(async () => {
@@ -584,14 +586,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {usdcBalance && (
-            <div>
-              <div className="text-xs text-text-muted mb-1">Hot Wallet Balance</div>
-              <div className="font-mono text-sm font-semibold text-accent">
-                ${parseFloat(usdcBalance).toFixed(2)} <span className="text-text-muted font-normal">USDC</span>
-              </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Hot Wallet Balance</div>
+            <div className="font-mono text-sm font-semibold text-accent">
+              {usdcBalance ? (
+                <>${parseFloat(usdcBalance).toFixed(2)} <span className="text-text-muted font-normal">USDC</span></>
+              ) : (
+                <span className="text-text-muted font-normal">—</span>
+              )}
             </div>
-          )}
+            {status === "active" && data?.deployment?.hotAddress && (
+              <button
+                onClick={() => setShowFunding(true)}
+                className="mt-2 w-full py-1.5 text-center text-xs font-semibold text-accent border border-accent/20 rounded-sm hover:bg-accent/10 transition-colors"
+              >
+                Fund Agent
+              </button>
+            )}
+          </div>
 
           {gatewayUrl && (
             <div>
